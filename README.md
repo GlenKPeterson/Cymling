@@ -3,7 +3,6 @@ Robust, Immutable, Powerful, Programming Language
 
 # Rippl Programming Language
 *INCOMPLETE*
-Copyrignt 2015 by Glen Peterson
 
 RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tell that to your non-programmer boss while you envision concentric waves on an otherwise still pond.  I hope to have a Rippl REPL soon (your non-programmer boss doesn't need to know that).
 
@@ -324,3 +323,13 @@ From Josh Bloch: https://youtu.be/EduWekviwRg
  - Type system must handle nulls (Nil).  Any time you start a function by checking basic attributes of arguments is a missed opportunity for the type system to help you out.
  - Make it easier to write immutable, private code.
  - Friend classes/packages?  So you can share certain internals only with certain other classes/packages?
+
+#License
+
+Copyright 2015 Glen K. Peterson
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
