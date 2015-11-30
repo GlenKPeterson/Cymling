@@ -9,10 +9,10 @@ RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tel
 ##Design Goals
  - Immutability is the default
  - Applicative Order by default (eager)
- - Type safety and a strong type system
+ - Type safety
  - Regular (lisp-like) syntax with very few infix operators
  - No primitives.  Built-in and user-defined data behave the same.
- - Interfaces, not objects.
+ - Interfaces over objects.
  - Evaluative (everything is an expression – no return statements)
 
 ##Syntax
@@ -168,6 +168,14 @@ cond(list((eq(a 1) fn({} println(“First”)))
           (eq(a 2) fn({} println(“Second”)))
           (default fn({} println(“Default”))))
 ```
+
+##Type System
+
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back either a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`) or a union type like `ImList<Int|Number>`.  Rippl should probably prefer the union signature which can then be safely cast to a `ImList<Number>`.  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+
+Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not.  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
+
+There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me.
 
 ##Defining Types
 At least to start, all types must be named – no anonymous instances of types.  Thus to make a person, you need:
