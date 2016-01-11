@@ -14,9 +14,10 @@ RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tel
  - No primitives.  Built-in and user-defined data behave the same.
  - Interfaces over objects.
  - Evaluative (everything is an expression – no return statements)
+ - Built-in data types: Record (hetero-list): `(a b c)`, Map: `{ a=b c=d e=f }`, Vector (homo-list): `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
 
 ##Syntax
-The syntax is a combination of Lisp and ML, with just a sprinkling of Java 8 interfaces (or Scala Traits).
+The syntax is a combination of Clojure (Lisp) and ML, with just a sprinkling of Java 8 interfaces (or Scala Traits).
 
 ###Comments
 Single-line comments are preceded by a semicolon.  Multi-line comments start with 3 or more semicolons and end with the same:
@@ -153,29 +154,44 @@ if(a                 ;; test clause
 
 TODO: Cond has a variable number of conditions.  Do we handle that with multiple “overridden” function definitions?  Or do we implement varargs?  Or do we have a built-in list data type (an array or linked list) to use in these cases?
 ```
-cond(eq(a 1) then(println(“First”))
-     eq(a 2) then(println(“Second”))
-     else(println(“Default”)))
-
-cond(list((eq(a 1) println(“First”))
-          (eq(a 2) println(“Second”))
-          (default println(“Default”)))
+cond(eq(a "Sq") concat("product: " times(a a))
+     eq(a "Pl") concat("sum: " plus(a a))
+     t() fn({} a))
 ```
 
-With explicit function wrapping for delayed evaluation:
+That example is deceptively simple.  The signature of cond could be overloaded (though in Java this makes IDE's slow - I don't know about runtime speed):
 ```
-cond(list((eq(a 1) fn({} println(“First”)))
-          (eq(a 2) fn({} println(“Second”)))
-          (default fn({} println(“Default”))))
+cond(if:Fn0<Bool> then:Fn0<T>):T
+cond(if:Fn0<Bool> then:Fn0<T>
+     if2:Fn0<Bool> then2:Fn0<T>):T
+cond(if:Fn0<Bool> then:Fn0<T>
+     if2:Fn0<Bool> then2:Fn0<T>
+     if3:Fn0<Bool> then3:Fn0<T>):T
+...
 ```
+
+Or cond could be a vargarg method where each argument is a record (pair) of zero-argument functions.  Treating functions as first class (like Clojure) builds delayed evaluation right in.  
+```
+cond[(if:Fn0<Bool> then:Fn0<T>)]:T
+```
+
+That would yield many more parens:
+```
+cond[(eq(a "Sq") concat("product: " times(a a)))
+     (eq(a "Pl") concat("sum: " plus(a a)))
+     (t() fn({} a))]
+```
+
+Hmmm... Not sure about that.  Do we need to make passing functions explicit somehow like the "pass-by-reference" operator in C?
+
 
 ##Type System
 
-Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back either a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`) or a union type like `ImList<Int|Number>`.  Rippl should probably prefer the union signature which can then be safely cast to a `ImList<Number>`.  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back either the union type `ImList<Int|Double>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
-Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not.  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
+Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not (changes in place).  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
 
-There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me.
+There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me, but this paragraph exceeds the limits of my competence, so basically, I don't know.
 
 ##Defining Types
 At least to start, all types must be named – no anonymous instances of types.  Thus to make a person, you need:
@@ -198,9 +214,19 @@ let( { marge={name=“Marge” age=37 height=16.24}
            println(“Marge is not taller than Sarah”)))
 ```
 
+Pretty soon, we're going to need parameterized types.  This definitely needs more thought...
+
+```
+defType(List<T>             ; Define a type called “List” with type param T
+        fns(get(i:Long):T = ...
+            cons(item:U):List<T|U> = ...
+        ))  ;                  
+```
+
+
 Main Method
 ```
-main({args:List[String]}
+main({args:List<String>}
      print(“Hello “ args.getOrElse(1 “World”) “!”)
      1)
 ```
@@ -208,22 +234,22 @@ main({args:List[String]}
 Let's look at if() for a moment.  It takes at least a then() or else() function for lazy evaluation
 
 ```
-defType(Then[T]
+defType(Then<T>
         { apply():T })
 
-defType(Else[T]
+defType(Else<T>
         { apply():T })
 
-defType(If[T]
+defType(If<T>
         { condition:Bool
-          then:Then[T]=Nil
-          else:Else[T]=Nil })
+          then:Then<T>=Nil
+          else:Else<T>=Nil })
 
-defType(ElsIf[T]
-        extends(Else[T] If[T])
+defType(ElsIf<T>
+        extends(Else<T> If<T>)
         { condition:Bool
-          then:Then[T]=Nil
-          else:Else[T]=Nil })
+          then:Then<T>=Nil
+          else:Else<T>=Nil })
 ```
 
 ##Strings
