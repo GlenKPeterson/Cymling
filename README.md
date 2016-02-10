@@ -9,7 +9,7 @@ RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tel
 ##Design Goals
  - Immutability is the default
  - Applicative Order by default (eager)
- - Type safety
+ - Static Type checking with inference everywhere except function parameters and return types.
  - Regular (lisp-like) syntax with very few infix operators
  - No primitives.  Built-in and user-defined data behave the same.
  - Interfaces over objects.
@@ -17,7 +17,7 @@ RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tel
  - Built-in data types: Record (hetero-list): `(a b c)`, Map: `{ a=b c=d e=f }`, Vector (homo-list): `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
 
 ##Syntax
-The syntax is a combination of Clojure (Lisp) and ML, with just a sprinkling of Java 8 interfaces (or Scala Traits).
+The syntax is a combination of Clojure (Lisp), ML, and Java.
 
 ###Comments
 Single-line comments are preceded by a semicolon.  Multi-line comments start with 3 or more semicolons and end with the same:
@@ -26,10 +26,14 @@ Single-line comments are preceded by a semicolon.  Multi-line comments start wit
 ; single line comment
 ;; A more-visible single-line comment
 
-;;;
+;*
 Multi-line comment
 Still in a multi-line comment...
-Comment ends here: ;;;
+Comment ends here: *;
+
+;**
+Multi-line RipplDoc comment
+*;
 ```
 
 ###Commas
@@ -49,7 +53,7 @@ func(arg1 arg2)    ; function application
 ```
 
 ##Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence, overriding, and other nightmares.  So there will only be three in this language.  One is the dot operator as described above.  The other two are the Colon (to introduce a type) and the Equals Sign (to associate keys with values).
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence, overriding, and other nightmares.  So there will only be three in this language.  One is the dot operator as described above.  The other two are the Colon (to introduce a type) and the Equals Sign (to associate keys with values).  The precedence is dot first, equals second.  Colons introduce types which are evaluated at compile time, not runtime.
 
 ###Dot Operator
 Instead of the usual Lisp convention of reading code inside out:
@@ -66,9 +70,10 @@ first(arg1).second(arg2)
 ##Records
 Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this:
 ```
-Person{ name:String
-        age:Int
-        height:Float }
+defType(Person
+        { name:String
+          age:Int
+          height:Float })
 ```
 
 Or maybe with the over-all type name at the end?:
@@ -78,36 +83,36 @@ Or maybe with the over-all type name at the end?:
   height:Float }:Person
 ```
 
-That creates something like a Java class of the appropriate type.  Or maybe it's implemented as an array plus symbols for the keys that hold the index of the value plus the type of the value.
-
-An instance of that definition using symbols:
+An instance of that definition using names:
 ```
 Person{ name=“Marge” age=37 height=16.24 }
 ```
 
-values can be accessed by index instead of symbol.  An equivalent using indices:
+The same using indices instead of names:
 ```
 Person(“Marge” 37 16.24)
 ```
 
-Both of the above examples compile to something like Java objects of an appropriate type with getter methods:
+Both of the above examples compile to something like Java objects of an appropriate type with getter methods (but no setter methods):
 ```
 name():String
 age():Int
 height():Float
 
-;; Record definition and instantiation
-Person{name=“Marge” age=37 height=16.24}.height()
-;; returns 16.24:Float
+;; Record definition with some defaults and inferred types (name:String and Height:Float)
+;; Note that position matters (all Person's will be defined in the order: name, age, height).
+defType(Person {name=“Marge” age:Int height=16.24})
 
-;; Instantiation only.
-Person(“Marge” 37 16.24).age()
-;; returns 37:Float
+;; Instantiation:
+let( { marge=Person{age=37}
+       fred=Person{name="Fred" age=35}
+       sally=Person("Sally" 15 12.2)} ;; Defined using record syntax instead of map syntax (like ML)
+
+     marge.height() ;; returns 16.24:Float
+     fred.age()) ;; returns 35:Int which is also the return for the entire let block.
 ```
 
 ##Interfaces
-This language will accrue a bunch of types.  Types will be given names through interfaces (this facilitates good compiler error messages).
-
 Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
 TODO: Pick one:
 A.
@@ -120,17 +125,17 @@ B.
 ```
 
 ##Lambdas
-Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  The fn() functions are used to create them.  fn({}) is a zero-argument function.
+Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  The defn() built-in functions are used to create them.
 ```
-fn({} print(“hello!”))
-fn({name:String}
+defn({} "" print(“hello!”))
+defn({name:String}
    print(“Hello ” name “,”)
    print(“Pleased to meet you!”)
    Nil)
 ```
 Or:
 ```
-print(fn({name:String}
+print(defn({name:String}
          cat(“Hello ” name “,\n” “Pleased to meet you!”))
       .apply(“Glen”))
 ```
@@ -189,6 +194,8 @@ Hmmm... Not sure about that.  Do we need to make passing functions explicit some
 
 Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back either the union type `ImList<Int|Double>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
+Hmm... That paragraph assumes inheritance.  Maybe you have to declare `defType Number = Int | Double` instead?
+
 Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not (changes in place).  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
 
 There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me, but this paragraph exceeds the limits of my competence, so basically, I don't know.
@@ -197,17 +204,21 @@ There may come a time when the type system needs to choose between being mathema
 At least to start, all types must be named – no anonymous instances of types.  Thus to make a person, you need:
 ```
 defType(Person             ; start defining a type called “Person”
-        extends(Nameable)  ; Extends and implements are the same
         { name:String      ; The expected methods are name():String
           age:Int          ;                          age():Int
           height:Float })  ;                      and height():Float
+```
+
+Note: If we want inheritance, second line *could* include:
+```
+        extends(Nameable)  ; Extends and implements are the same
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
 
 ```
 let( { marge={name=“Marge” age=37 height=16.24}
-	  fred:Person={name=“Fred” age=39 height=15.5} 
+       fred:Person={name=“Fred” age=39 height=15.5} 
        sarah:Person=(”Sarah” 35 17.0) }
      if(gt(marge.height() sarah.height())
            println(“Marge is taller than Sarah”)
