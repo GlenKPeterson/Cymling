@@ -2,7 +2,7 @@
 Robust, Immutable, Powerful, Programming Language
 
 # Rippl Programming Language
-*INCOMPLETE*
+*Comments Welcome!*
 
 RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tell that to your non-programmer boss while you envision concentric waves on an otherwise still pond.  I hope to have a Rippl REPL soon (your non-programmer boss doesn't need to know that).
 
@@ -292,7 +292,7 @@ Nothing might be a sub-type of Nil indicating that no valid type can be used?
 ##Union Types
 Are available.  String-or-null is:
 ```
-middleName:or(String Nil)
+middleName:String|Nil
 ;; or maybe like Ceylon:
 middleName:String?
 ```
@@ -300,31 +300,33 @@ middleName:String?
 Similar syntax could be used to indicate optional parameters.
 ```
 foo({first:String
-     middle:default(String “”)
+     middle:String=“”
      last:String}
      cat(“Hello “ first middle last))
 ```
 
-Union types are available:
+Union and intersection types are available through type aliases:
 ```
-defType(Suit
-        or(Clubs Diamonds Hearts Spades))
+defAlias(Suit
+         Clubs|Diamonds|Hearts|Spades)
 
-defEnum(FaceCard
-        or(Jack Queen King Ace))
+defAlias(FaceCard
+         Jack|Queen|King|Ace)
 
-;; Type alias:
+defAlias(QueenOfSpades
+         Queen & Spades)
+
 defAlias(Num Int)
 
 ;; A Rank could be either a face card or a Num (int):
 defType(Rank
-        or(FaceCard Num))
+        FaceCard|Num)
 
 ;; A card is a combination of a suit and a rank:
 defType(Card
         { suit:Suit
           rank:Rank
-          toString=fn({} cat(suit “ “ rank)) } ;; a function?
+          toString=cat(suit “ “ rank) ;; zero-argument function
 )
 ```
 
@@ -334,19 +336,13 @@ defn(printCard                       ; function name
      {card:Card}                     ; arguments form a record
      print(card.suit “ “ card.rank)) ; body
 ```
-
-Might be better on card        
-```
-defType(Card
-        { suit:Suit
-          rank:Rank
-          printCard=println(cat(suit “ “ rank))}) ; A zero-arg method with default implementation
-```
 Here we extend a type:
 ```
-defType(name:CardWithBack
-        extends:Card
+defType(WithBack
         showBack=println(“*****”))
+
+defAlias(CardWithBack
+         Card & WithBack)
 ```
 
 A poker chip:
@@ -364,8 +360,8 @@ defAlias(PlayItem
 Now when you use a PlayItem, you have to destructure it:
 ```
 printCard(item:PlayItem) = 
-    case(item Chip chip println(cat(“Chip: “ chip.color))
-              CardWithBack card println(cat(“Card: “ card.printCard))))
+    case(item (Chip chip println(cat(“Chip: “ chip.color)))
+              (CardWithBack card println(cat(“Card: “ card.printCard)))))
 ```
 
 ##Additional Ideas
