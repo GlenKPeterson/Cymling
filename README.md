@@ -9,18 +9,19 @@ RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tel
 ##Design Goals
  - Immutability is the default
  - Applicative Order by default (eager)
- - Static Type checking with inference everywhere except function parameters and return types.
+ - Static Type checking
+ - Type inference everywhere except function parameters and return types
  - Regular (lisp-like) syntax with very few infix operators
- - No primitives.  Built-in and user-defined data behave the same.
- - Interfaces over objects.
+ - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
+ - Interfaces over objects (like ML)
  - Evaluative (everything is an expression – no return statements)
- - Built-in data types: Record (hetero-list): `(a b c)`, Map: `{ a=b c=d e=f }`, Vector (homo-list): `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
+ - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, Vector (list): `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
 
 ##Syntax
-The syntax is a combination of Clojure (Lisp), ML, and Java.
+The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of Java (or not).
 
 ###Comments
-Single-line comments are preceded by a semicolon.  Multi-line comments start with 3 or more semicolons and end with the same:
+Single-line comments are preceded by a semicolon.  Multi-line comments start with `;*` and end with `*;`.  RIPPL-doc comments are multi-line with an extra beginning `*`:
 
 ```
 ; single line comment
@@ -53,8 +54,16 @@ func(arg1 arg2)    ; function application
 ```
 
 ##Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence, overriding, and other nightmares.  So there will only be three in this language.  One is the dot operator as described above.  The other two are the Colon (to introduce a type) and the Equals Sign (to associate keys with values).  The precedence is dot first, equals second.  Colons introduce types which are evaluated at compile time, not runtime.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence, overriding, and other nightmares.  So there will very limited operators in this language, plus a few in the type system.
 
+Operators (in precedence order):
+ - `.` for function application
+ - `=` associates keys with values in records/maps.  `->` denotes a function referece so that the function is effectively delegeted to.
+
+Type operators (in precedence order):
+ - `:` introduces a type
+ - `|` ("or") for union types, `&` ("and") for intersection types
+ 
 ###Dot Operator
 Instead of the usual Lisp convention of reading code inside out:
 ```
@@ -64,7 +73,6 @@ We borrow the “dot operator” from C-style languages to enable a “Fluent In
 ```
 first(arg1).second(arg2)
            .third(arg3)
-           
 ```
 
 ##Records
@@ -74,13 +82,6 @@ defType(Person
         { name:String
           age:Int
           height:Float })
-```
-
-Or maybe with the over-all type name at the end?:
-```
-{ name:String
-  age:Int
-  height:Float }:Person
 ```
 
 An instance of that definition using names:
@@ -115,13 +116,14 @@ let( { marge=Person{age=37}
 ##Interfaces
 Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
 TODO: Pick one:
-A.
+A. (This cannot be used with union or intersection types)
 ```
 Person{name=“Marge” age=37 height=16.24}
 ```
-B.
+B. (This will work with union or intersection types)
 ```
 {name=“Marge” age=37 height=16.24}:Person
+{name=“Marge” age=37 height=16.24}:Person|Employee
 ```
 
 ##Lambdas
@@ -192,7 +194,7 @@ Hmmm... Not sure about that.  Do we need to make passing functions explicit some
 
 ##Type System
 
-Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back either the union type `ImList<Int|Double>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back the union type `ImList<Int|Double>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
 Hmm... That paragraph assumes inheritance.  Maybe you have to declare `defType Number = Int | Double` instead?
 
@@ -201,7 +203,7 @@ Therefore, the type system needs some indication of what's immutable (grows by n
 There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me, but this paragraph exceeds the limits of my competence, so basically, I don't know.
 
 ##Defining Types
-At least to start, all types must be named – no anonymous instances of types.  Thus to make a person, you need:
+To make a person type, you need:
 ```
 defType(Person             ; start defining a type called “Person”
         { name:String      ; The expected methods are name():String
@@ -212,6 +214,10 @@ defType(Person             ; start defining a type called “Person”
 Note: If we want inheritance, second line *could* include:
 ```
         extends(Nameable)  ; Extends and implements are the same
+```
+But I'd prefer to use type aliases:
+```
+defAlias(Nameable Person)
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
@@ -225,7 +231,7 @@ let( { marge={name=“Marge” age=37 height=16.24}
            println(“Marge is not taller than Sarah”)))
 ```
 
-Pretty soon, we're going to need parameterized types.  This definitely needs more thought...
+Parameterized types use angle-brackets like Java.
 
 ```
 defType(List<T>             ; Define a type called “List” with type param T
@@ -268,12 +274,12 @@ defType(ElsIf<T>
 I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8, have all serialization use UTF8, and give Str8 a .to16() method to convert to Java style strings.  This would require a bunch of work that I don't want to do up front, but over time I think it would be a big win.  Also, it would be good to rewrite the regular expressions library to use this and use it quickly.  When people use emoji, we don't want to be counting “code points” as opposed to characters the way you have to in Java.  UTF8 seems to be the new world standard...
 
 ##Pattern Matching
-*Wish List:*
+Instead of inheritence, we use pattern matching (like ML).
 ```
 match(item
-      Person{n:name a:age h:height} println(“Person: ” n)
-      Car(license year)             println(“Car: ” license)
-      default                       println(“Default”))
+      {Person{n:name a:age h:height}=println(“Person: ” n)
+       Car(license year)            =println(“Car: ” license)
+       default                      =println(“Default”)})
 ```
 
 Note: Enums values may have to be sub-classes of the Enum they belong to for pattern matching to work.
@@ -316,42 +322,43 @@ defType(Rank
 
 ;; A card is a combination of a suit and a rank:
 defType(Card
-        suit:Suit
-        rank:Rank
-        toString=fn({} cat(suit “ “ rank)) ;; a function?
+        { suit:Suit
+          rank:Rank
+          toString=fn({} cat(suit “ “ rank)) } ;; a function?
 )
 ```
 
 Function within the current namespace:
 ```
-defFunc(printCard                       ; function name
-        {card:Card}                     ; arguments form a record
-        print(card.suit “ “ card.rank)) ; body
+defn(printCard                       ; function name
+     {card:Card}                     ; arguments form a record
+     print(card.suit “ “ card.rank)) ; body
 ```
 
 Might be better on card        
 ```
-defType('name=Card
-        'data={ suit:Suit rank:Rank }
-        printCard=println(cat(card.suit “ “ card.rank)))
+defType(Card
+        { suit:Suit
+          rank:Rank
+          printCard=println(cat(suit “ “ rank))}) ; A zero-arg method with default implementation
 ```
 Here we extend a type:
 ```
-defType('name=CardWithBack
-        'extends=Card
+defType(name:CardWithBack
+        extends:Card
         showBack=println(“*****”))
 ```
 
 A poker chip:
 ```
-defType('name=Color
-        'symVals=(Red Green Blue Yellow))
+defAlias(Color
+         Red|Green|Blue|Yellow)
 
-defType('name=Chip
-        'data={color:Color value:Int})
+defType(Chip
+        {color:Color value:Int})
 
-defType('name=PlayItem
-        'union=(Chip CardWithBack))
+defAlias(PlayItem
+         Chip|CardWithBack)
 ```
 
 Now when you use a PlayItem, you have to destructure it:
@@ -378,3 +385,24 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+#Reserved syntax
+```
+. field access
+, whitespace
+{} map/dictionary (also stores key order from creation)
+() tuple/record
+[] vector/list
+#{} set
+<> parameterized type
+: introduces a type
+@ introduces an annotation
+```
+
+## Keywords
+```
+default The default case for match and cond statements
+match for type matching (ML calls this "pattern matching" but Java uses that to mean Regex)
+Nil for null or false
+t for true
+```
