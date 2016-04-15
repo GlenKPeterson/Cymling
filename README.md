@@ -54,7 +54,7 @@ func(arg1 arg2)    ; function application
 ```
 
 ##Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence, overriding, and other nightmares.  So there will very limited operators in this language, plus a few in the type system.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very limited operators in this language, plus a few in the type system.
 
 Operators (in precedence order):
  - `.` for function application
@@ -69,14 +69,14 @@ Instead of the usual Lisp convention of reading code inside out:
 ```
 (third (second (first arg1) arg2) arg3)
 ```
-We borrow the “dot operator” from C-style languages to enable a “Fluent Interface” type style:
+We borrow the “dot operator” from C-style languages to enable a “Fluent Interface” style:
 ```
 first(arg1).second(arg2)
            .third(arg3)
 ```
 
 ##Records
-Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this:
+Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in defType function):
 ```
 defType(Person
         { name:String
