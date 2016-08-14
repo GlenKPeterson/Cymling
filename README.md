@@ -80,19 +80,19 @@ first(arg1).second(arg2)
 ```
 
 ##Records
-Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in defType function):
+Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in type keyword):
 ```
-defType(Person (name:String
-                age:Int64
-                height:Float64))
+type Person = {name:String?
+               age:Int64 = 0
+               height:Float64?}
 ```
 
 An instance of that definition using names instead of indices:
 ```
-Person(name=“Marge” age=37 height=16.24)
+Person{name=“Marge” age=37 height=16.24}
 ```
 
-The same using indices only (instead of names):
+The same using indices instead of names:
 ```
 Person(“Marge” 37 16.24)
 ```
@@ -105,7 +105,7 @@ height():Float64
 
 ;; Record definition with some defaults and inferred types (name:String and Height:Float32)
 ;; Note that position matters (all Person's will be defined in the order: name, age, height).
-defType(Person {name=“Marge” age:Int height=16.24})
+type Person = {name=“Marge” age:Int height=16.24}
 
 ;; Instantiation:
 let( { marge=Person{age=37}
@@ -167,6 +167,20 @@ Fn3<Tup2<Bool,Fn0<T>>,
     T>
 ```
 
+The cond built-in is overloaded with a second definition that leaves out the elseifs:
+```
+cond:<T> T = λ(if:     (test:Bool     then:λ<T>)
+               else:   λ<T>)
+```
+The type signature of that is:
+```
+Fn3<Tup2<Bool,Fn0<T>>,
+    Fn0<T>,
+    T>
+```
+
+
+
 ##Type System
 
 Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float64` to it and you'll get back the union type `ImList<Int|Float64>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float64`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
@@ -180,19 +194,12 @@ There may come a time when the type system needs to choose between being mathema
 ##Defining Types
 To make a person type, you need:
 ```
-defType(Person             ; start defining a type called “Person”
-        { name:String      ; The expected methods are name():String
-          age:Int          ;                          age():Int
-          height:Float })  ;                      and height():Float
-```
+;; Defines a type called Nameable that has a name() method which returns a String or null
+type Nameable = { name:String? }
 
-Note: If we want inheritance, second line *could* include:
-```
-        extends(Nameable)  ; Extends and implements are the same
-```
-But I'd prefer to use type aliases:
-```
-defAlias(Nameable Person)
+;; Defines a type called Person that has a name(), age() and height() methods.
+;; the name() method comes from Nameable.
+type Person = Nameable & { age:Int height:Float } ; 
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
@@ -202,7 +209,7 @@ let( { marge={name=“Marge” age=37 height=16.24}
        fred:Person={name=“Fred” age=39 height=15.5} 
        sarah:Person=(”Sarah” 35 17.0) }
      cond(gt(marge.height() sarah.height())
-           “Marge is taller than Sarah”
+           λ“Marge is taller than Sarah”
            “Marge is not taller than Sarah”))
 ```
 
