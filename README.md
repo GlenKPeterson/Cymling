@@ -1,27 +1,29 @@
-# Rippl
-Robust, Immutable, Powerful, Programming Language
-
-# Rippl Programming Language
+# Cymling Programming Language
 *Comments Welcome!*
 
-RIPPL stands for Robust, Immutable, Powerful, Programming Language.  You can tell that to your non-programmer boss while you envision concentric waves on an otherwise still pond.  I hope to have a Rippl REPL soon (your non-programmer boss doesn't need to know that).
+ - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
+ - Functional (first class functions, immutability assumed/easier/preferred)
+ - Type-safe (with type aliases like ML, not Object Oriented)
+
+Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in it ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
 
 ##Design Goals
  - Immutability is the default
- - Applicative Order by default (eager)
+ - Applicative Order by default (eager, not like Haskell)
  - Static Type checking
- - Type inference everywhere except function parameters and return types
+ - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
  - Regular (lisp-like) syntax with very few infix operators
  - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
- - Interfaces over objects (like ML)
+ - Types are related using aliases and set theory (like ML), not through object hierarchies.
  - Evaluative (everything is an expression – no return statements)
- - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, Vector (list): `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
+ - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, List: `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
 
 ##Syntax
 The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of Java (or not).
 
 ###Comments
-Single-line comments are preceded by a semicolon.  Multi-line comments start with `;*` and end with `*;`.  RIPPL-doc comments are multi-line with an extra beginning `*`:
+
+In order to leave the division symbol for division, a semicolon is substituted (like lisp).  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
 
 ```
 ; single line comment
@@ -33,7 +35,7 @@ Still in a multi-line comment...
 Comment ends here: *;
 
 ;**
-Multi-line RipplDoc comment
+Multi-line CymlingDoc comment
 *;
 ```
 
@@ -47,14 +49,14 @@ Lisp puts the the function name to the right of the parenthesis, which causes pl
 '(“Marge” 37 16.24)
 ```
 
-Instead, Rippl will put the function to the left and literal records (not lists) will not require quotes:
+Cymling puts the function to the left and literal records (not lists) will not require quotes:
 ```
 func(arg1 arg2)    ; function application
 (“Marge” 37 16.24) ; record/tuple
 ```
 
 ##Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very limited operators in this language, plus a few in the type system.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very limited operators in this language, mostly for the type system.
 
 Operators (in precedence order):
  - `.` for function application
@@ -127,70 +129,50 @@ B. (This will work with union or intersection types)
 ```
 
 ##Lambdas
-Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  The defn() built-in functions are used to create them.
+Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ(args:Record body:T):T` is a built-in function used to create them.  A zero-arg form is available as well without any parens: `λbody:T`.  This uses the Lambda character, unicode U+3bb.  To type this on Ubuntu type CTRL-SHIFT-u then 3bb then RETURN (we might use `fn` as an alias for `λ`).
+
 ```
-defn({} "" print(“hello!”))
-defn({name:String}
-   print(“Hello ” name “,”)
-   print(“Pleased to meet you!”)
-   Nil)
-```
-Or:
-```
-print(defn({name:String}
-         cat(“Hello ” name “,\n” “Pleased to meet you!”))
-      .apply(“Glen”))
+myFn:Fn0<String> = λ({} “hello!”)
+
+myFn() ;; returns "hello!"
+
+myFn2:Fn0<Unit> = λ({name:String}
+                    "Hello $name$. Pleased to meet you!")
+
+myFn2("Kelly") ;; returns "Hello Kelly. Pleased to meet you!"
 ```
 
 ##Other Operators
 All other (non-infix) operators have syntax like other functions.  Because they are functions, they can be lazily evaluated:
 
 ```
-if(a                 ;; test clause
-   then(print(“a”))        ;; lazily-evaluated then clause
-   else(println(“not a”))) ;; lazily-evaluated else clause
-```
-TODO: How does elseif work?
-```
-if(a                 ;; test clause
-   then(print(“a”))        ;; lazily-evaluated then clause
-   elsif(b then(print(“b”)))
-   elsif(c then(print(“c”)))
-   else(println(“not a, b, or c”))) ;; lazily-evaluated else clause
+cond((a λ(“a”))           ;; eager if, followed by lazy then
+     [(λ(b) λ(“b”))       ;; list of lazily evaluated if/then clauses.
+      (λ(c) λ(“c”))]
+     λ(“not a, b, or c”)) ;; lazily-evaluated else clause
 ```
 
-TODO: Cond has a variable number of conditions.  Do we handle that with multiple “overridden” function definitions?  Or do we implement varargs?  Or do we have a built-in list data type (an array or linked list) to use in these cases?
+Might want to sugar that up somewhat.
 ```
-cond(eq(a "Sq") concat("product: " times(a a))
-     eq(a "Pl") concat("sum: " plus(a a))
-     t() fn({} a))
-```
-
-That example is deceptively simple.  The signature of cond could be overloaded (though in Java this makes IDE's slow - I don't know about runtime speed):
-```
-cond(if:Fn0<Bool> then:Fn0<T>):T
-cond(if:Fn0<Bool> then:Fn0<T>
-     if2:Fn0<Bool> then2:Fn0<T>):T
-cond(if:Fn0<Bool> then:Fn0<T>
-     if2:Fn0<Bool> then2:Fn0<T>
-     if3:Fn0<Bool> then3:Fn0<T>):T
-...
+cond((a λ“a”)           ;; eager if, followed by lazy then
+     [(λb λ“b”)       ;; list of lazily evaluated if/then clauses.
+      (λc λ“c”)]
+     λ“not a, b, or c”) ;; lazily-evaluated else clause
 ```
 
-Or cond could be a vargarg method where each argument is a record (pair) of zero-argument functions.  Treating functions as first class (like Clojure) builds delayed evaluation right in.  
+The signature of cond is:
 ```
-cond[(if:Fn0<Bool> then:Fn0<T>)]:T
+cond:<T> T = λ(if:     (test:Bool     then:λ<T>)
+               elseifs:[(test:λ<Bool> then:λ<T>>)]
+               else:   λ<T>)
 ```
-
-That would yield many more parens:
+The type signature of that is:
 ```
-cond[(eq(a "Sq") concat("product: " times(a a)))
-     (eq(a "Pl") concat("sum: " plus(a a)))
-     (t() fn({} a))]
+Fn3<Tup2<Bool,Fn0<T>>,
+    List<Tup2<Fn0<Bool>,Fn0<T>>,
+    Fn0<T>,
+    T>
 ```
-
-Hmmm... Not sure about that.  Do we need to make passing functions explicit somehow like the "pass-by-reference" operator in C?
-
 
 ##Type System
 
