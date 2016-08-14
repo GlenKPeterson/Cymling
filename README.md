@@ -146,16 +146,8 @@ myFn2("Kelly") ;; returns "Hello Kelly. Pleased to meet you!"
 All other (non-infix) operators have syntax like other functions.  Because they are functions, they can be lazily evaluated:
 
 ```
-cond((a λ(“a”))           ;; eager if, followed by lazy then
-     [(λ(b) λ(“b”))       ;; list of lazily evaluated if/then clauses.
-      (λ(c) λ(“c”))]
-     λ(“not a, b, or c”)) ;; lazily-evaluated else clause
-```
-
-Might want to sugar that up somewhat.
-```
 cond((a λ“a”)           ;; eager if, followed by lazy then
-     [(λb λ“b”)       ;; list of lazily evaluated if/then clauses.
+     [(λb λ“b”)         ;; list of lazily evaluated if/then clauses.
       (λc λ“c”)]
      λ“not a, b, or c”) ;; lazily-evaluated else clause
 ```
