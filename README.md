@@ -83,7 +83,7 @@ Data definition and function application are borrowed primarily from ML's record
 defType(Person
         { name:String
           age:Int
-          height:Float })
+          height:Float32 })
 ```
 
 An instance of that definition using names:
@@ -100,9 +100,9 @@ Both of the above examples compile to something like Java objects of an appropri
 ```
 name():String
 age():Int
-height():Float
+height():Float32
 
-;; Record definition with some defaults and inferred types (name:String and Height:Float)
+;; Record definition with some defaults and inferred types (name:String and Height:Float32)
 ;; Note that position matters (all Person's will be defined in the order: name, age, height).
 defType(Person {name=“Marge” age:Int height=16.24})
 
@@ -111,7 +111,7 @@ let( { marge=Person{age=37}
        fred=Person{name="Fred" age=35}
        sally=Person("Sally" 15 12.2)} ;; Defined using record syntax instead of map syntax (like ML)
 
-     marge.height() ;; returns 16.24:Float
+     marge.height() ;; returns 16.24:Float32
      fred.age()) ;; returns 35:Int which is also the return for the entire let block.
 ```
 
@@ -128,11 +128,11 @@ B. (This will work with union or intersection types)
 {name=“Marge” age=37 height=16.24}:Person|Employee
 ```
 
-##Lambdas
-Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ(args:Record body:T):T` is a built-in function used to create them.  A zero-arg form is available as well without any parens: `λbody:T`.  This uses the Lambda character, unicode U+3bb.  To type this on Ubuntu type CTRL-SHIFT-u then 3bb then RETURN (we might use `fn` as an alias for `λ`).
+##Functions
+Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ<T>(args:Record body:T):T` is a built-in function used to create them.  A zero-arg sugary short-form is available as well without any parens: `λ<T>body:T`.  This uses the Lambda character (commonly used to mean, "anonymous function," which is unicode U+03BB.  To type this on Ubuntu (there is no need to type leading zeros) `CTRL-SHIFT-u` `3` `b` `b` `RETURN`.  We might use `^`, `#`, or `@` instead of `λ`, but for now we're using what's easiest to read.
 
 ```
-myFn:Fn0<String> = λ({} “hello!”)
+myFn:Fn0<String> = λ“hello!” ;; or, more formally: λ({} "hello!")
 
 myFn() ;; returns "hello!"
 
@@ -168,9 +168,9 @@ Fn3<Tup2<Bool,Fn0<T>>,
 
 ##Type System
 
-Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Double` to it and you'll get back the union type `ImList<Int|Double>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Double`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float64` to it and you'll get back the union type `ImList<Int|Float64>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float64`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
-Hmm... That paragraph assumes inheritance.  Maybe you have to declare `defType Number = Int | Double` instead?
+That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `defType Number = Int | Float64` where `Int` and `Float64` are both built-in types.
 
 Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not (changes in place).  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
 
@@ -200,9 +200,9 @@ Here is a let block that performs some pretty simple logic on some people (fred 
 let( { marge={name=“Marge” age=37 height=16.24}
        fred:Person={name=“Fred” age=39 height=15.5} 
        sarah:Person=(”Sarah” 35 17.0) }
-     if(gt(marge.height() sarah.height())
-           println(“Marge is taller than Sarah”)
-           println(“Marge is not taller than Sarah”)))
+     cond(gt(marge.height() sarah.height())
+           “Marge is taller than Sarah”
+           “Marge is not taller than Sarah”))
 ```
 
 Parameterized types use angle-brackets like Java.
@@ -251,9 +251,9 @@ I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8,
 Instead of inheritence, we use pattern matching (like ML).
 ```
 match(item
-      {Person{n:name a:age h:height}=println(“Person: ” n)
-       Car(license year)            =println(“Car: ” license)
-       default                      =println(“Default”)})
+      [(Person{n:name a:age h:height} λ“Person: $n$”)
+       (Car(license year)             λ“Car: $license$")
+       (default                       λ“Default”)])
 ```
 
 Note: Enums values may have to be sub-classes of the Enum they belong to for pattern matching to work.
@@ -306,14 +306,14 @@ defType(Card
 
 Function within the current namespace:
 ```
-defn(printCard                       ; function name
-     {card:Card}                     ; arguments form a record
-     print(card.suit “ “ card.rank)) ; body
+let{printCard:Fn<Card,String> =      ; variable name and optional type
+     λ( (card:Card)                  ; function definition.  Arguments form a record
+        "$card.suit$ $card.rank$") } ; body
 ```
 Here we extend a type:
 ```
 defType(WithBack
-        showBack=println(“*****”))
+        showBack=λ“*****”)
 
 defAlias(CardWithBack
          Card & WithBack)
