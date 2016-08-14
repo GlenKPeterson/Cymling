@@ -80,27 +80,26 @@ first(arg1).second(arg2)
 ##Records
 Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in defType function):
 ```
-defType(Person
-        { name:String
-          age:Int
-          height:Float32 })
+defType(Person (name:String
+                age:Int64
+                height:Float64))
 ```
 
-An instance of that definition using names:
+An instance of that definition using names instead of indices:
 ```
-Person{ name=“Marge” age=37 height=16.24 }
+Person(name=“Marge” age=37 height=16.24)
 ```
 
-The same using indices instead of names:
+The same using indices only (instead of names):
 ```
 Person(“Marge” 37 16.24)
 ```
 
-Both of the above examples compile to something like Java objects of an appropriate type with getter methods (but no setter methods):
+Both of the above examples compile to something like Java objects of an appropriate type with getter methods and a constructor, but no setter methods:
 ```
 name():String
-age():Int
-height():Float32
+age():Int64
+height():Float64
 
 ;; Record definition with some defaults and inferred types (name:String and Height:Float32)
 ;; Note that position matters (all Person's will be defined in the order: name, age, height).
