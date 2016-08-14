@@ -25,7 +25,7 @@ The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of
 
 ###Comments
 
-In order to leave the division symbol for division, a semicolon is substituted (like lisp).  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
+In order to leave the division symbol for division (and to nod to lisp), a semicolon is substituted for the otherwise C-style comment syntax.  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
 
 ```
 ; single line comment
