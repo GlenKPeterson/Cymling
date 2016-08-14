@@ -1,5 +1,7 @@
 # Cymling Programming Language
-*Comments Welcome!*
+(Formerly called RIPPL)
+
+*Design Unfinished: Comments Welcome!*
 
  - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
  - Functional (first class functions, immutability assumed/easier/preferred)
