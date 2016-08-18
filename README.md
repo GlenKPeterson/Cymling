@@ -4,21 +4,23 @@
 *Design Unfinished: Comments Welcome!*
 
  - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
- - Functional (first class functions, immutability assumed/easier/preferred)
+ - Functional (first class functions, immutability is assumed/easier/preferred)
  - Type-safe (with type aliases like ML, not Object Oriented)
 
-Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in it ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
+Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
 
 ##Design Goals
  - Immutability is the default
  - Applicative Order by default (eager, not like Haskell)
  - Static Type checking
  - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
- - Regular (lisp-like) syntax with very few infix operators
+ - Regular (lisp-like) syntax with very few infix operators for basic language
+ - Traditional algebraic syntax for types
  - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
- - Types are related using aliases and set theory (like ML), not through object hierarchies.
+ - Types are related using aliases and set theory (like ML), not necessarily through object hierarchies.
  - Evaluative (everything is an expression – no return statements)
  - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, List: `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
+ - Angle brackets are used for parameterized types: `List<String>`
 
 ##Syntax
 The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of Java (or not).
@@ -62,12 +64,12 @@ Infix operators allow very Natural-Language friendly syntax, but can quickly lea
 
 Operators (in precedence order):
  - `.` for function application
- - `=` associates keys with values in records/maps.  `->` denotes a function referece so that the function is effectively delegeted to.
+ - `=` associates keys with values in records/maps.
 
 Type operators (in precedence order):
  - `:` introduces a type
  - `|` ("or") for union types, `&` ("and") for intersection types
- 
+
 ###Dot Operator
 Instead of the usual Lisp convention of reading code inside out:
 ```
@@ -83,8 +85,8 @@ first(arg1).second(arg2)
 Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in type keyword):
 ```
 type Person = {name:String?
-               age:Int64 = 0
-               height:Float64?}
+               age:Int = 0
+               height:Float?}
 ```
 
 An instance of that definition using names instead of indices:
@@ -100,8 +102,8 @@ Person(“Marge” 37 16.24)
 Both of the above examples compile to something like Java objects of an appropriate type with getter methods and a constructor, but no setter methods:
 ```
 name():String
-age():Int64
-height():Float64
+age():Int
+height():Float
 
 ;; Record definition with some defaults and inferred types (name:String and Height:Float32)
 ;; Note that position matters (all Person's will be defined in the order: name, age, height).
@@ -159,7 +161,7 @@ cond:<T> T = λ(if:     (test:Bool     then:λ<T>)
                elseifs:[(test:λ<Bool> then:λ<T>>)]
                else:   λ<T>)
 ```
-The type signature of that is:
+The type signature of the function call is
 ```
 Fn3<Tup2<Bool,Fn0<T>>,
     List<Tup2<Fn0<Bool>,Fn0<T>>,
@@ -179,13 +181,11 @@ Fn3<Tup2<Bool,Fn0<T>>,
     T>
 ```
 
-
-
 ##Type System
 
-Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float64` to it and you'll get back the union type `ImList<Int|Float64>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float64`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
-That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `defType Number = Int | Float64` where `Int` and `Float64` are both built-in types.
+That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `defType Number = Int | Float` where `Int` and `Float` are both built-in types.
 
 Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not (changes in place).  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
 
@@ -216,10 +216,10 @@ let( { marge={name=“Marge” age=37 height=16.24}
 Parameterized types use angle-brackets like Java.
 
 ```
-defType(List<T>             ; Define a type called “List” with type param T
-        fns(get(i:Long):T = ...
-            cons(item:U):List<T|U> = ...
-        ))  ;                  
+type List<T> =             ; Define a type called “List” with type param T
+        { get:Fn1<Long,T>
+          cons:Fn<U,List<T|U>>
+        }                  
 ```
 
 
@@ -230,38 +230,18 @@ main({args:List<String>}
      1)
 ```
 
-Let's look at if() for a moment.  It takes at least a then() or else() function for lazy evaluation
-
-```
-defType(Then<T>
-        { apply():T })
-
-defType(Else<T>
-        { apply():T })
-
-defType(If<T>
-        { condition:Bool
-          then:Then<T>=Nil
-          else:Else<T>=Nil })
-
-defType(ElsIf<T>
-        extends(Else<T> If<T>)
-        { condition:Bool
-          then:Then<T>=Nil
-          else:Else<T>=Nil })
-```
-
 ##Strings
 *Wish List:*
-I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8, have all serialization use UTF8, and give Str8 a .to16() method to convert to Java style strings.  This would require a bunch of work that I don't want to do up front, but over time I think it would be a big win.  Also, it would be good to rewrite the regular expressions library to use this and use it quickly.  When people use emoji, we don't want to be counting “code points” as opposed to characters the way you have to in Java.  UTF8 seems to be the new world standard...
+I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8, have all serialization use UTF8, and give Str8 a .toUtf16() method to convert to Java style strings.  This would require a bunch of work that I don't want to do up front, but over time I think it would be a big win.  Also, it would be good to rewrite the regular expressions library to use this and use it quickly.  When people use emoji, we don't want to be counting “code points” as opposed to characters the way you have to in Java.  UTF8 seems to be the new world standard...
 
 ##Pattern Matching
 Instead of inheritence, we use pattern matching (like ML).
+TODO: Make this work a lot more like cond above.  Maybe have a constructedBy(item signature) or something?
 ```
 match(item
-      [(Person{n:name a:age h:height} λ“Person: $n$”)
-       (Car(license year)             λ“Car: $license$")
-       (default                       λ“Default”)])
+      (Person{n:name a:age h:height} = λ“Person: $n$”
+       Car(license year)             = λ“Car: $license$"
+       default                       = λ“Default”))
 ```
 
 Note: Enums values may have to be sub-classes of the Enum they belong to for pattern matching to work.
@@ -281,35 +261,29 @@ middleName:String?
 
 Similar syntax could be used to indicate optional parameters.
 ```
-foo({first:String
-     middle:String=“”
-     last:String}
-     cat(“Hello “ first middle last))
+foo = λ({first:String
+         middle:String=“”
+         last:String}
+        cat(“Hello “ first middle last))
 ```
 
 Union and intersection types are available through type aliases:
 ```
-defAlias(Suit
-         Clubs|Diamonds|Hearts|Spades)
+type Suit = Clubs|Diamonds|Hearts|Spades
 
-defAlias(FaceCard
-         Jack|Queen|King|Ace)
+type FaceCard = Jack|Queen|King|Ace
 
-defAlias(QueenOfSpades
-         Queen & Spades)
+type QueenOfSpades = Queen & Spades
 
-defAlias(Num Int)
+type Num = Int
 
 ;; A Rank could be either a face card or a Num (int):
-defType(Rank
-        FaceCard|Num)
+type Rank = FaceCard|Num
 
 ;; A card is a combination of a suit and a rank:
-defType(Card
-        { suit:Suit
-          rank:Rank
-          toString=cat(suit “ “ rank) ;; zero-argument function
-)
+type Card = { suit:Suit
+              rank:Rank
+              toString:String=cat(suit “ “ rank) } ;; default zero-argument function
 ```
 
 Function within the current namespace:
@@ -320,30 +294,26 @@ let{printCard:Fn<Card,String> =      ; variable name and optional type
 ```
 Here we extend a type:
 ```
-defType(WithBack
-        showBack=λ“*****”)
+type WithBack = showBack=λ“*****”
 
-defAlias(CardWithBack
-         Card & WithBack)
+type CardWithBack Card & WithBack
 ```
 
 A poker chip:
 ```
-defAlias(Color
-         Red|Green|Blue|Yellow)
+type Color = Red|Green|Blue|Yellow
 
-defType(Chip
-        {color:Color value:Int})
+type Chip = {color:Color value:Int}
 
-defAlias(PlayItem
-         Chip|CardWithBack)
+type PlayItem = Chip|CardWithBack
 ```
 
 Now when you use a PlayItem, you have to destructure it:
+TODO: Destructuring syntax needs work!
 ```
-printCard(item:PlayItem) = 
-    case(item (Chip chip println(cat(“Chip: “ chip.color)))
-              (CardWithBack card println(cat(“Card: “ card.printCard)))))
+toString(item:PlayItem) = 
+    case(item (Chip chip cat(“Chip: “ chip.color))
+              (CardWithBack card cat(“Card: “ card.printCard))))
 ```
 
 ##Additional Ideas
@@ -374,11 +344,13 @@ Unless required by applicable law or agreed to in writing, software distributed 
 #{} set
 <> parameterized type
 : introduces a type
+= type assignment, or key-value pair binding.
 @ introduces an annotation
 ```
 
 ## Keywords
 ```
+type introduces a type
 default The default case for match and cond statements
 match for type matching (ML calls this "pattern matching" but Java uses that to mean Regex)
 Nil for null or false
