@@ -10,24 +10,28 @@
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
 
 ##Design Goals
- - Immutability is the default
+ - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
  - Static Type checking
  - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
  - Regular (lisp-like) syntax with very few infix operators for basic language
  - Traditional algebraic syntax for types
+ - Where practical, the language should be homoiconic because this leads to a consistency of concept and syntax that is very appealing (like Lisp).
  - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
  - Types are related using aliases and set theory (like ML), not necessarily through object hierarchies.
  - Evaluative (everything is an expression – no return statements)
- - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, List: `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.
+ - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, List: `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.  If this looks like Clojure, consider that [UncleJim/Paguro](https://github.com/GlenKPeterson/UncleJim) is a Java library that seeks to make the Clojure collections suitable for use in type-safe JVM languages.
  - Angle brackets are used for parameterized types: `List<String>`
 
 ##Syntax
 The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of Java (or not).
 
+###Commas
+Commas are whitespace (like Clojure).  Add them when it helps you, but the compiler treats them as spaces.
+
 ###Comments
 
-In order to leave the division symbol for division (and to nod to lisp), a semicolon is substituted for the otherwise C-style comment syntax.  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
+In order to leave the division symbol for division (and as a grateful to nod to Lisp), a semicolon is substituted for the otherwise C-style comment syntax.  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
 
 ```
 ; single line comment
@@ -43,31 +47,29 @@ Multi-line CymlingDoc comment
 *;
 ```
 
-###Commas
-Commas are whitespace (like Clojure).  Add them when it helps you, but the compiler treats them as spaces.
-
 ###Functions vs. Record literals
-Lisp puts the the function name to the right of the parenthesis, which causes plain lists to require quoting:
+**Lisp** puts the the function name to the right of the parenthesis, which causes plain lists to require quoting:
 ```
-(func arg1 arg2)
-'(“Marge” 37 16.24)
+(func arg1 arg2)    ; call/apply funct with arguments arg1 and arg2.
+'(“Marge” 37 16.24) ; a literal list of 3 items.
 ```
 
-Cymling puts the function to the left and literal records (not lists) will not require quotes:
+**Cymling** puts the function to the left and literal Records (not lists) will not require quoting:
 ```
 func(arg1 arg2)    ; function application
-(“Marge” 37 16.24) ; record/tuple
+(“Marge” 37 16.24) ; record/tuple of 3 items with types String, Int and Float
 ```
 
 ##Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very limited operators in this language, mostly for the type system.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very few operators in this language, mostly for the type system.
 
 Operators (in precedence order):
  - `.` for function application
  - `=` associates keys with values in records/maps.
 
 Type operators (in precedence order):
- - `:` introduces a type
+ - `<T>` Defines a symbol (in this case, the letter `T` to be used as a parameterized type.
+ - `:` Defines a type (TODO: return type, or just plain type?).
  - `|` ("or") for union types, `&` ("and") for intersection types
 
 ###Dot Operator
@@ -84,22 +86,20 @@ first(arg1).second(arg2)
 ##Records
 Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in type keyword):
 ```
-type Person = {name:String?
+type Person = (name:String?
                age:Int = 0
-               height:Float?}
+               height:Float?)
 ```
 
-An instance of that definition using names instead of indices:
+An instance of that definition is declared using Record syntax.  Parameters can be determined due to order, or optional names may be used for clarity.
 ```
-Person{name=“Marge” age=37 height=16.24}
-```
-
-The same using indices instead of names:
-```
-Person(“Marge” 37 16.24)
+;; Each line produces a Person instance.
+(“Marge” 37 16.24):Person
+(name=“Fred” age=23 height=17.89):Person
+(“Little Margo” height=3.14):Person ;; Note: This person gets the default age=0.
 ```
 
-Both of the above examples compile to something like Java objects of an appropriate type with getter methods and a constructor, but no setter methods:
+Both of the above examples compile to something like Java objects of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/UncleJim/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a constructor, but no setter methods:
 ```
 name():String
 age():Int
@@ -107,12 +107,12 @@ height():Float
 
 ;; Record definition with some defaults and inferred types (name:String and Height:Float32)
 ;; Note that position matters (all Person's will be defined in the order: name, age, height).
-type Person = {name=“Marge” age:Int height=16.24}
+type Person = (name=“Marge” age:Int height=16.24)
 
 ;; Instantiation:
-let( { marge=Person{age=37}
-       fred=Person{name="Fred" age=35}
-       sally=Person("Sally" 15 12.2)} ;; Defined using record syntax instead of map syntax (like ML)
+let( (marge=(age=37):Person
+      fred=(name="Fred" age=35):Person
+      sally=("Sally" 15 12.2):Person);; end declaration part of let block
 
      marge.height() ;; returns 16.24:Float32
      fred.age()) ;; returns 35:Int which is also the return for the entire let block.
@@ -123,24 +123,26 @@ Interfaces (not objects) can extend the functionality of records in a pseudo-Obj
 TODO: Pick one:
 A. (This cannot be used with union or intersection types)
 ```
-Person{name=“Marge” age=37 height=16.24}
+Person(name=“Marge” age=37 height=16.24)
 ```
 B. (This will work with union or intersection types)
 ```
-{name=“Marge” age=37 height=16.24}:Person
-{name=“Marge” age=37 height=16.24}:Person|Employee
+(name=“Marge” age=37 height=16.24):Person
+(name=“Marge” age=37 height=16.24):Person|Employee
 ```
 
 ##Functions
-Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ<T>(args:Record body:T):T` is a built-in function used to create them.  A zero-arg sugary short-form is available as well without any parens: `λ<T>body:T`.  This uses the Lambda character (commonly used to mean, "anonymous function," which is unicode U+03BB.  To type this on Ubuntu (there is no need to type leading zeros) `CTRL-SHIFT-u` `3` `b` `b` `RETURN`.  We might use `^`, `#`, or `@` instead of `λ`, but for now we're using what's easiest to read.
+Functions are first class.  To name a function, simply assign it to a variable, like any other value.
+
+Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ<T>(args:Record body:T):T` is a built-in function used to create them.  A zero-arg sugary short-form is available as well without any parens: `λ<T>body:T`.  This uses the Lambda character (commonly used to mean, "anonymous function," which is unicode U+03BB.  To type this on Ubuntu (there is no need to type leading zeros) `CTRL-SHIFT-u` `3` `b` `b` `RETURN`.  We might use `^`, `#`, `&`, or `@` instead of `λ`, but for now we're using what's easiest to read.
 
 ```
-myFn:Fn0<String> = λ“hello!” ;; or, more formally: λ({} "hello!")
+myFn:Fn0<String> = λ“hello!” ;; or, more formally: λ(() "hello!")
 
 myFn() ;; returns "hello!"
 
-myFn2:Fn0<Unit> = λ({name:String}
-                    "Hello $name$. Pleased to meet you!")
+myFn2:Fn1<String,String> = λ( (name:String)
+                              "Hello $name$. Pleased to meet you!")
 
 myFn2("Kelly") ;; returns "Hello Kelly. Pleased to meet you!"
 ```
@@ -157,9 +159,9 @@ cond((a λ“a”)           ;; eager if, followed by lazy then
 
 The signature of cond is:
 ```
-cond:<T> T = λ(if:     (test:Bool     then:λ<T>)
-               elseifs:[(test:λ<Bool> then:λ<T>>)]
-               else:   λ<T>)
+cond<T>:T = λ(if:      (test:Bool    then:λ<T>)
+              elseifs:[(test:λ<Bool> then:λ<T>>)]
+              else:   λ<T>)
 ```
 The type signature of the function call is
 ```
@@ -171,7 +173,7 @@ Fn3<Tup2<Bool,Fn0<T>>,
 
 The cond built-in is overloaded with a second definition that leaves out the elseifs:
 ```
-cond:<T> T = λ(if:     (test:Bool     then:λ<T>)
+cond<T>:T = λ(if:     (test:Bool     then:λ<T>)
                else:   λ<T>)
 ```
 The type signature of that is:
