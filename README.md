@@ -20,7 +20,11 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
  - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
  - Types are related using aliases and set theory (like ML), not necessarily through object hierarchies.
  - Evaluative (everything is an expression – no return statements)
- - Built-in data types: Record (tuple): `(a b c)`, Map: `{ a=b c=d e=f }`, List: `[a b c]`, Set: `#{a b c}` - like Clojure except the fundamental unit is a Record instead of a linked list.  If this looks like Clojure, consider that [UncleJim/Paguro](https://github.com/GlenKPeterson/UncleJim) is a Java library that seeks to make the Clojure collections suitable for use in type-safe JVM languages.
+ - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of these can be found in [UncleJim/Paguro](https://github.com/GlenKPeterson/UncleJim) - a Java library that seeks to make the Clojure collections suitable for use in type-safe languages.  Here are the built-in types:
+   - Record (tuple / heterogenious map): `(a b c)`
+   - Map (homogenous): `{ a=b c=d e=f }`
+   - List: `[a b c]`
+   - Set: `#{a b c}`
  - Angle brackets are used for parameterized types: `List<String>`
 
 ##Syntax
