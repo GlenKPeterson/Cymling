@@ -12,7 +12,7 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
 ##Design Goals
  - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
- - Static Type checking
+ - Static Type checking, but in a way that doesn't preclude writing functions first and defining complex data types later.
  - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
  - Regular (lisp-like) syntax with very few infix operators for basic language
  - Traditional algebraic syntax for types
@@ -161,24 +161,31 @@ cond((a λ“a”)           ;; eager if, followed by lazy then
      λ“not a, b, or c”) ;; lazily-evaluated else clause
 ```
 
-The signature of cond is:
+TODO: This is a little confused, is this an alternate type signature of cond?  This is meant to be what it would look like if you defined cond in a `let` statement.  But some of it is a declaration, and some of it is just the types without any implementation.  Should these be equal signs or colons after test, elseifs, and else?  I gess this is meant to be like the class?
 ```
-cond<T>:T = λ(if:      (test:Bool    then:λ<T>)
-              elseifs:[(test:λ<Bool> then:λ<T>>)]
-              else:   λ<T>)
+cond<T>:T = λ( test:    (if:Bool    then:λ<T>)
+               elseifs:[(if:λ<Bool> then:λ<T>>)]
+               else:   λ<T>)
 ```
-The type signature of the function call is
+Try that again:
 ```
-Fn3<Tup2<Bool,Fn0<T>>,
-    List<Tup2<Fn0<Bool>,Fn0<T>>,
-    Fn0<T>,
-    T>
+cond<T>:T = λ( test:    (if:Bool    then:λ<T>)   ;; the if/then defines an anonymous tuple-type on the fly.
+               elseifs:[(if:λ<Bool> then:λ<T>>)] ;; A list of anonymous tuple/types
+               else:   λ<T>)                     ;; Fn0<T>
+```
+
+The Java type signature of the function call is:
+```
+Fn3<Tup2<Bool,Fn0<T>>,           ;; First argument
+    List<Tup2<Fn0<Bool>,Fn0<T>>, ;; Second argument
+    Fn0<T>,                      ;; Third argument
+    T>                           ;; return type.
 ```
 
 The cond built-in is overloaded with a second definition that leaves out the elseifs:
 ```
-cond<T>:T = λ(if:     (test:Bool     then:λ<T>)
-               else:   λ<T>)
+cond<T>:T = λ( test:(if:Bool then:λ<T>)
+               else:λ<T>)
 ```
 The type signature of that is:
 ```
@@ -191,7 +198,7 @@ Fn3<Tup2<Bool,Fn0<T>>,
 
 Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
-That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `defType Number = Int | Float` where `Int` and `Float` are both built-in types.
+That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `type Number = Int | Float` where `Int` and `Float` are both built-in types.
 
 Therefore, the type system needs some indication of what's immutable (grows by nesting like Russian Dolls) and what's not (changes in place).  Since imutability is the default, there should be an `@Mutable` or similar annotation required in order to update data in place.  Probably a second annotation `@MutableNotThreadSafe` should be required for people who really want to live dangerously.  Without such annotations, your class/interface cannot do any mutation.
 
@@ -201,20 +208,20 @@ There may come a time when the type system needs to choose between being mathema
 To make a person type, you need:
 ```
 ;; Defines a type called Nameable that has a name() method which returns a String or null
-type Nameable = { name:String? }
+type Nameable = ( name:String? )
 
 ;; Defines a type called Person that has a name(), age() and height() methods.
 ;; the name() method comes from Nameable.
-type Person = Nameable & { age:Int height:Float } ; 
+type Person = Nameable & ( age:Int height:Float )
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
 
 ```
-let( { marge={name=“Marge” age=37 height=16.24}
-       fred:Person={name=“Fred” age=39 height=15.5} 
-       sarah:Person=(”Sarah” 35 17.0) }
-     cond(gt(marge.height() sarah.height())
+let( ( marge=(name=“Marge” age=37 height=16.24)
+       fred:Person=(name=“Fred” age=39 height=15.5)
+       sarah:Person=(”Sarah” 35 17.0) )
+     cond(gt(marge.height sarah.height)
            λ“Marge is taller than Sarah”
            “Marge is not taller than Sarah”))
 ```
@@ -223,17 +230,15 @@ Parameterized types use angle-brackets like Java.
 
 ```
 type List<T> =             ; Define a type called “List” with type param T
-        { get:Fn1<Long,T>
-          cons:Fn<U,List<T|U>>
-        }                  
+        ( get:Fn1<Long,T>
+          cons:Fn<U,List<T|U>> )                  
 ```
-
 
 Main Method
 ```
-main({args:List<String>}
-     print(“Hello “ args.getOrElse(1 “World”) “!”)
-     1)
+main( (args:List<String>)
+      last(print(“Hello “ args.getOrElse(1 “World”) “!”)
+           1))
 ```
 
 ##Strings
@@ -245,7 +250,7 @@ Instead of inheritence, we use pattern matching (like ML).
 TODO: Make this work a lot more like cond above.  Maybe have a constructedBy(item signature) or something?
 ```
 match(item
-      (Person{n:name a:age h:height} = λ“Person: $n$”
+      (Person(n:name a:age h:height) = λ“Person: $n$”
        Car(license year)             = λ“Car: $license$"
        default                       = λ“Default”))
 ```
@@ -267,9 +272,9 @@ middleName:String?
 
 Similar syntax could be used to indicate optional parameters.
 ```
-foo = λ({first:String
-         middle:String=“”
-         last:String}
+foo = λ( (first:String
+          middle:String=“”
+          last:String)
         cat(“Hello “ first middle last))
 ```
 
