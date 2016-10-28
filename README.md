@@ -159,7 +159,7 @@ myFn2("Kelly")
 All other (non-infix) operators have syntax like other functions.  Because they are functions, they can be lazily evaluated:
 
 ```
-cond(a λ“a”             ;; eager if, followed by lazy then
+cond(a    λ“a”          ;; eager if, followed by lazy then
      [(λb λ“b”)         ;; list of lazily evaluated if/then clauses.
       (λc λ“c”)]
      λ“not a, b, or c”) ;; lazily-evaluated else clause
@@ -167,24 +167,9 @@ cond(a λ“a”             ;; eager if, followed by lazy then
 
 TODO: This is a little confused, is this an alternate type signature of cond?  This is meant to be what it would look like if you defined cond in a `let` statement.  But some of it is a declaration, and some of it is just the types without any implementation.  Should these be equal signs or colons after test, elseifs, and else?  I gess this is meant to be like the class?
 ```
-cond<T>:T = λ( if:Bool    then:λ<T>
-               elseifs:[(if:λ<Bool> then:λ<T>>)]
-               else:   λ<T>)
-```
-Try that again:
-```
-cond<T>:T = λ( if:Bool    then:λ<T>   ;; the if/then defines an anonymous tuple-type on the fly.
-               elseifs:[(if:λ<Bool> then:λ<T>>)] ;; A list of anonymous tuple/types
-               else:   λ<T>)                     ;; Fn0<T>
-```
-
-The Java type signature of the function call is:
-```
-Fn4<Bool,                        ;; First "if" is eager (always executed)
-    Fn0<T>,                      ;; Lazy "then"
-    List<Tup2<Fn0<Bool>,Fn0<T>>, ;; List of lazy "ifs" and "then"s
-    Fn0<T>,                      ;; Lazy "else"
-    T>                           ;; return type.
+cond<T>:T = λ( if:Bool                then:Fn0<T>    ;; Eager "if", lazy "then"
+               elseifs:[(if:Fn0<Bool> then:Fn0<T>>)] ;; A list of lazy "if/then"'s
+               else:Fn0<T>)                          ;; A lazy "else"
 ```
 
 The cond built-in is overloaded with a second definition that leaves out the elseifs:
