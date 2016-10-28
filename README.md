@@ -141,21 +141,25 @@ Functions are first class.  To name a function, simply assign it to a variable, 
 Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ<T>(args:Record body:T):T` is a built-in function used to create them.  A zero-arg sugary short-form is available as well without any parens: `λ<T>body:T`.  This uses the Lambda character (commonly used to mean, "anonymous function," which is unicode U+03BB.  To type this on Ubuntu (there is no need to type leading zeros) `CTRL-SHIFT-u` `3` `b` `b` `RETURN`.  We might use `^`, `#`, `&`, or `@` instead of `λ`, but for now we're using what's easiest to read.
 
 ```
-myFn:Fn0<String> = λ“hello!” ;; or, more formally: λ(() "hello!")
+val myFn = λ“hello!” ;; or, more formally: λ(() "hello!")
+;; defined myFn:Fn0<String>
 
-myFn() ;; returns "hello!"
+myFn() ;; Apply the function
+;; "hello!"
 
-myFn2:Fn1<String,String> = λ( (name:String)
-                              "Hello $name$. Pleased to meet you!")
+val myFn2 = λ( (name:String)
+               "Hello $name$. Pleased to meet you!")
+;; defined myFn2:Fn1<String,String>
 
-myFn2("Kelly") ;; returns "Hello Kelly. Pleased to meet you!"
+myFn2("Kelly")
+;; "Hello Kelly. Pleased to meet you!"
 ```
 
 ##Other Operators
 All other (non-infix) operators have syntax like other functions.  Because they are functions, they can be lazily evaluated:
 
 ```
-cond((a λ“a”)           ;; eager if, followed by lazy then
+cond(a λ“a”             ;; eager if, followed by lazy then
      [(λb λ“b”)         ;; list of lazily evaluated if/then clauses.
       (λc λ“c”)]
      λ“not a, b, or c”) ;; lazily-evaluated else clause
@@ -163,40 +167,39 @@ cond((a λ“a”)           ;; eager if, followed by lazy then
 
 TODO: This is a little confused, is this an alternate type signature of cond?  This is meant to be what it would look like if you defined cond in a `let` statement.  But some of it is a declaration, and some of it is just the types without any implementation.  Should these be equal signs or colons after test, elseifs, and else?  I gess this is meant to be like the class?
 ```
-cond<T>:T = λ( test:    (if:Bool    then:λ<T>)
+cond<T>:T = λ( if:Bool    then:λ<T>
                elseifs:[(if:λ<Bool> then:λ<T>>)]
                else:   λ<T>)
 ```
 Try that again:
 ```
-cond<T>:T = λ( test:    (if:Bool    then:λ<T>)   ;; the if/then defines an anonymous tuple-type on the fly.
+cond<T>:T = λ( if:Bool    then:λ<T>   ;; the if/then defines an anonymous tuple-type on the fly.
                elseifs:[(if:λ<Bool> then:λ<T>>)] ;; A list of anonymous tuple/types
                else:   λ<T>)                     ;; Fn0<T>
 ```
 
 The Java type signature of the function call is:
 ```
-Fn3<Tup2<Bool,Fn0<T>>,           ;; First argument
-    List<Tup2<Fn0<Bool>,Fn0<T>>, ;; Second argument
-    Fn0<T>,                      ;; Third argument
+Fn4<Bool,                        ;; First "if" is eager (always executed)
+    Fn0<T>,                      ;; Lazy "then"
+    List<Tup2<Fn0<Bool>,Fn0<T>>, ;; List of lazy "ifs" and "then"s
+    Fn0<T>,                      ;; Lazy "else"
     T>                           ;; return type.
 ```
 
 The cond built-in is overloaded with a second definition that leaves out the elseifs:
 ```
-cond<T>:T = λ( test:(if:Bool then:λ<T>)
-               else:λ<T>)
+cond<T>:T = λ(if:Bool then:λ<T> else:λ<T>)
 ```
 The type signature of that is:
 ```
-Fn3<Tup2<Bool,Fn0<T>>,
-    Fn0<T>,
-    T>
+Fn3<Bool,Fn0<T>,Fn0<T>,T>
 ```
+There is no "if" without an "else" because such a statement would lack a return type for the false condition.
 
 ##Type System
 
-Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  Some day I'll copy it to this document.  In any case, immutable collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
+Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  *Immutable* collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
 That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `type Number = Int | Float` where `Int` and `Float` are both built-in types.
 
