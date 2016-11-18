@@ -21,7 +21,7 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
  - Types are related using aliases and set theory (like ML), not necessarily through object hierarchies.
  - Evaluative (everything is an expression – no return statements)
  - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of these can be found in [UncleJim/Paguro](https://github.com/GlenKPeterson/UncleJim) - a Java library that seeks to make the Clojure collections suitable for use in type-safe languages.  Here are the built-in types:
-   - Record (tuple / heterogenious map): `(a b c)`
+   - Record (tuple / heterogenious map): `(a b c)` (items accessible by order) OR `(a=b c=d e=f)` (items also accessible by name) OR a combination of the two.
    - Map (homogenous): `{ a=b c=d e=f }`
    - List: `[a b c]`
    - Set: `#{a b c}`
@@ -88,14 +88,15 @@ first(arg1).second(arg2)
 ```
 
 ##Records
-Data definition and function application are borrowed primarily from ML's records.  Thus a data definition looks like this (using the built-in type keyword):
+Like ML, we'll use records.  This language is type safe, but it does not require you to define types beforehand.  Just make records and use them.  You'll probably want to define aliases for commonly used records, especially if you pass them to functions.  For that, there's a built-in `type` keyword.  A data definition looks like this:
 ```
 type Person = (name:String?
                age:Int = 0
                height:Float?)
 ```
+Notice that this is C-like syntax.  That's because this is about types and therefore deserves to *look* different from the more lispy grammar of the rest of the language.
 
-An instance of that definition is declared using Record syntax.  Parameters can be determined due to order, or optional names may be used for clarity.
+An instance of that definition is declared using Record syntax.  Parameters can be accessed by index (0-based), or optional names may be used for clarity.
 ```
 ;; Each line produces a Person instance.
 (“Marge” 37 16.24):Person
@@ -125,11 +126,11 @@ let( (marge=(age=37):Person
 ##Interfaces
 Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
 TODO: Pick one:
-A. (This cannot be used with union or intersection types)
+A. This cannot be used with union or intersection types
 ```
 Person(name=“Marge” age=37 height=16.24)
 ```
-B. (This will work with union or intersection types)
+B. This will work with union or intersection types
 ```
 (name=“Marge” age=37 height=16.24):Person
 (name=“Marge” age=37 height=16.24):Person|Employee
