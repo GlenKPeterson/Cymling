@@ -148,12 +148,31 @@ val myFn = λ“hello!” ;; or, more formally: λ(() "hello!")
 myFn() ;; Apply the function
 ;; "hello!"
 
+printLater(myFn) ;; Pass the function to another function (so it can be applied later)
+
 val myFn2 = λ( (name:String)
                "Hello $name$. Pleased to meet you!")
 ;; defined myFn2:Fn1<String,String>
 
 myFn2("Kelly")
 ;; "Hello Kelly. Pleased to meet you!"
+```
+
+This means that function pointers are nothing special.
+```
+val marge=(age=37):Person
+marge.age()
+;; 37:Int
+
+marge.age
+;; Fn<Int>
+
+;; if myFn from the above example was defined in a scope called "Nelg"
+Nelg.myFn
+;; Fn0<String>
+
+Nelg.myFn()
+;; "hello!":String
 ```
 
 ##Other Operators
