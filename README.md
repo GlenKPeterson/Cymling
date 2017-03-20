@@ -10,6 +10,7 @@
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
 
 ## Design Goals
+ - Clojure with types, but somewhat different syntax.
  - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
  - Static Type checking, but in a way that doesn't preclude writing functions first and defining complex data types later.
