@@ -9,7 +9,7 @@
 
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy***ML***ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Java too, but ML was the final missing piece for me.
 
-##Design Goals
+## Design Goals
  - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
  - Static Type checking, but in a way that doesn't preclude writing functions first and defining complex data types later.
@@ -27,13 +27,13 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
    - Set: `#{a b c}`
  - Angle brackets are used for parameterized types: `List<String>`
 
-##Syntax
+## Syntax
 The syntax is a combination of Clojure (Lisp) and ML, with maybe a sprinkling of Java (or not).
 
-###Commas
+### Commas
 Commas are whitespace (like Clojure).  Add them when it helps you, but the compiler treats them as spaces.
 
-###Comments
+### Comments
 
 In order to leave the division symbol for division (and as a grateful to nod to Lisp), a semicolon is substituted for the otherwise C-style comment syntax.  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
 
@@ -51,7 +51,7 @@ Multi-line CymlingDoc comment
 *;
 ```
 
-###Functions vs. Record literals
+### Functions vs. Record literals
 **Lisp** puts the the function name to the right of the parenthesis, which causes plain lists to require quoting:
 ```
 (func arg1 arg2)    ; call/apply funct with arguments arg1 and arg2.
@@ -64,7 +64,7 @@ func(arg1 arg2)    ; function application
 (“Marge” 37 16.24) ; record/tuple of 3 items with types String, Int and Float
 ```
 
-##Operators
+## Operators
 Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very few operators in this language, mostly for the type system.
 
 Operators (in precedence order):
@@ -76,7 +76,7 @@ Type operators (in precedence order):
  - `:` Defines a type (TODO: return type, or just plain type?).
  - `|` ("or") for union types, `&` ("and") for intersection types
 
-###Dot Operator
+### Dot Operator
 Instead of the usual Lisp convention of reading code inside out:
 ```
 (third (second (first arg1) arg2) arg3)
@@ -87,7 +87,7 @@ first(arg1).second(arg2)
            .third(arg3)
 ```
 
-##Records
+## Records
 Like ML, we'll use records.  This language is type safe, but it does not require you to define types beforehand.  Just make records and use them.  You'll probably want to define aliases for commonly used records, especially if you pass them to functions.  For that, there's a built-in `type` keyword.  A data definition looks like this:
 ```
 type Person = (instance=(name:String?
@@ -124,7 +124,7 @@ let( (marge=(age=37):Person
      fred.age()) ;; returns 35:Int which is also the return for the entire let block.
 ```
 
-##Interfaces
+## Interfaces
 Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
 ~~TODO: Pick one:~~
 ~~A. This cannot be used with union or intersection types~~
@@ -138,7 +138,7 @@ B. This will work with union or intersection types
 (name=“Marge” age=37 height=16.24):Person|Employee
 ```
 
-##Functions
+## Functions
 Functions are first class.  To name a function, simply assign it to a variable, like any other value.
 
 Anonymous functions are defined with their arguments followed by the statements to be executed when they are called.  `λ<T>(args:Record body:T):T` is a built-in function used to create them.  A zero-arg sugary short-form is available as well without any parens: `λ<T>body:T`.  This uses the Lambda character (commonly used to mean, "anonymous function," which is unicode U+03BB.  To type this on Ubuntu (there is no need to type leading zeros) `CTRL-SHIFT-u` `3` `b` `b` `RETURN`.  We might use `^`, `#`, `&`, or `@` instead of `λ`, but for now we're using what's easiest to read.
@@ -177,7 +177,7 @@ Nelg.myFn()
 ;; "hello!":String
 ```
 
-##Other Operators
+## Other Operators
 All other (non-infix) operators have syntax just like functions.  Because they are functions, they can be lazily evaluated:
 
 ```
@@ -202,7 +202,7 @@ cond = Fn3(if:Bool then:Fn0<T> else:Fn0<T>):T
 ```
 There is no "if" without an "else" because such a statement would lack a return type for the false condition.
 
-##Type System
+## Type System
 
 Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  *Immutable* collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
@@ -212,7 +212,7 @@ Therefore, the type system needs some indication of what's immutable (grows by n
 
 There may come a time when the type system needs to choose between being mathematically sound and being lenient.  I am not committed to soundness in the strict sense.  I require a type system to prevent-known-bad, but that's weaker than most type systems which have an allow-known-good outlook.  My experience with Java is that sooner or later you have to cast somewhere in your API.  That seems just a little too strict for me, but this paragraph exceeds the limits of my competence, so basically, I don't know.
 
-##Defining Types
+## Defining Types
 To make a person type, you need:
 ```
 ;; Defines a type called Nameable that has a name() method which returns a String or null
@@ -259,7 +259,7 @@ type Person = (instance=(name:String?
                static=(addAges = λ((people: List<Person>) people.foldLeft(0, λ((count, person) +(count person.age)))))
 ```
 
-###Inferred type conversions
+### Inferred type conversions
 If you give your type fromXXXX or toXXXX static methods, the compiler can make this conversion.  For instance if you have a type Person, just add a static method as follows:
 
 ```
@@ -269,11 +269,11 @@ type Person = (instance=(name:String?
                static=(toInt = λ((person:Person) person.age))))
 ```
 
-##Strings
+## Strings
 *Wish List:*
 I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8, have all serialization use UTF8, and give Str8 a .toUtf16() method to convert to Java style strings.  This would require a bunch of work that I don't want to do up front, but over time I think it would be a big win.  Also, it would be good to rewrite the regular expressions library to use this and use it quickly.  When people use emoji, we don't want to be counting “code points” as opposed to characters the way you have to in Java.  UTF8 seems to be the new world standard...
 
-##Pattern Matching
+## Pattern Matching
 Instead of inheritence, we use pattern matching (like ML).
 TODO: Make this work a lot more like cond above.  Maybe have a constructedBy(item signature) or something?
 ```
@@ -285,12 +285,12 @@ match(item
 
 Note: Enums values may have to be sub-classes of the Enum they belong to for pattern matching to work.
 
-##Types
+## Types
 Any is the progenitor super-type
 Nil is a sub-type of most things
 Nothing might be a sub-type of Nil indicating that no valid type can be used?
 
-##Union Types
+## Union Types
 Are available.  String-or-null is:
 ```
 middleName:String|Nil
@@ -355,7 +355,7 @@ toString(item:PlayItem) =
               (CardWithBack card cat(“Card: “ card.printCard))))
 ```
 
-##Additional Ideas
+## Additional Ideas
 From Josh Bloch: https://youtu.be/EduWekviwRg
 
  - Maybe auto-promote variables from a Record to a Map with Assoc, and let the type-system handle that.
@@ -363,7 +363,7 @@ From Josh Bloch: https://youtu.be/EduWekviwRg
  - Make it easier to write immutable, private code.
  - Friend classes/packages?  So you can share certain internals only with certain other classes/packages?
 
-#License
+# License
 
 Copyright 2015 Glen K. Peterson
 
@@ -373,7 +373,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-#Reserved syntax
+# Reserved syntax
 ```
 . field access
 , whitespace
