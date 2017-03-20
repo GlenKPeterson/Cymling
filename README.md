@@ -90,9 +90,10 @@ first(arg1).second(arg2)
 ##Records
 Like ML, we'll use records.  This language is type safe, but it does not require you to define types beforehand.  Just make records and use them.  You'll probably want to define aliases for commonly used records, especially if you pass them to functions.  For that, there's a built-in `type` keyword.  A data definition looks like this:
 ```
-type Person = (name:String?
-               age:Int = 0
-               height:Float?)
+type Person = (instance=(name:String?
+                         age:Int = 0
+                         height:Float?)
+               static=())
 ```
 Notice that this is C-like syntax.  That's because this is about types and therefore deserves to *look* different from the more lispy grammar of the rest of the language.
 
@@ -176,7 +177,7 @@ Nelg.myFn()
 ```
 
 ##Other Operators
-All other (non-infix) operators have syntax like other functions.  Because they are functions, they can be lazily evaluated:
+All other (non-infix) operators have syntax just like functions.  Because they are functions, they can be lazily evaluated:
 
 ```
 cond(a    λ“a”          ;; eager if, followed by lazy then
@@ -214,11 +215,13 @@ There may come a time when the type system needs to choose between being mathema
 To make a person type, you need:
 ```
 ;; Defines a type called Nameable that has a name() method which returns a String or null
-type Nameable = ( name:String? )
+type Nameable = (instance=(name:String?)
+                 static=())
 
 ;; Defines a type called Person that has a name(), age() and height() methods.
 ;; the name() method comes from Nameable.
-type Person = Nameable & ( age:Int height:Float )
+type Person = Nameable & (instance=(age:Int height:Float)
+                          static=())
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
@@ -245,6 +248,24 @@ Main Method
 main( (args:List<String>)
       last(print(“Hello “ args.getOrElse(1 “World”) “!”)
            1))
+```
+
+### Static methods
+```
+type Person = (instance=(name:String?
+                         age:Int = 0
+                         height:Float?)
+               static=(addAges = λ((people: List<Person>) people.foldLeft(0, λ((count, person) +(count person.age)))))
+```
+
+###Inferred type conversions
+If you give your type fromXXXX or toXXXX static methods, the compiler can make this conversion.  For instance if you have a type Person, just add a static method as follows:
+
+```
+type Person = (instance=(name:String?
+                         age:Int = 0
+                         height:Float?)
+               static=(toInt = λ((person:Person) person.age))))
 ```
 
 ##Strings
@@ -355,8 +376,8 @@ Unless required by applicable law or agreed to in writing, software distributed 
 ```
 . field access
 , whitespace
-{} map/dictionary (also stores key order from creation)
-() tuple/record
+{} map/dictionary (homogenous, unordered map)
+() tuple/record (heterogenious map that stores key order from creation)
 [] vector/list
 #{} set
 <> parameterized type
