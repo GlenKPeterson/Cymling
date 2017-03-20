@@ -126,10 +126,11 @@ let( (marge=(age=37):Person
 
 ##Interfaces
 Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
-TODO: Pick one:
-A. This cannot be used with union or intersection types
+~~TODO: Pick one:~~
+~~A. This cannot be used with union or intersection types~~
 ```
-Person(name=“Marge” age=37 height=16.24)
+;; NOT THIS!
+;; Person(name=“Marge” age=37 height=16.24)
 ```
 B. This will work with union or intersection types
 ```
