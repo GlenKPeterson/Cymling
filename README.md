@@ -1,13 +1,12 @@
 # Cymling Programming Language
-(Formerly called RIPPL)
 
 *Design Unfinished: Comments Welcome!*
 
  - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
  - Functional (first class functions, immutability is assumed/easier/preferred)
- - Type-safe (with type aliases like ML, not Object Oriented)
+ - Type-safe (with type aliases like ML, not necessarily Object Oriented)
 
-Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy**ML**ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  I could have nodded to Clojure, JSON, and Kotlin, but ML was the final missing piece for me.
+Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy**ML**ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  The C nods to Clojure.
 
 ## Design Goals
  - Clojure with types, but somewhat different syntax.
@@ -131,7 +130,7 @@ Interfaces (not objects) can extend the functionality of records in a pseudo-Obj
 ~~TODO: Pick one:~~
 ~~A. This cannot be used with union or intersection types~~
 ```
-;; NOT THIS!
+;; Maybe optional sugar:
 ;; Person(name=“Marge” age=37 height=16.24)
 ```
 B. This will work with union or intersection types
