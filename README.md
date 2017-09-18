@@ -300,7 +300,7 @@ Similar syntax could be used to indicate optional parameters.
 foo = { first:String
         middle:String=“”
         last:String
-        -> cat(“Hello “ first middle last) }
+        -> cat(“Hello “ first " " middle " " last "!") }
 ```
 
 Union and intersection types are available through type aliases:
