@@ -253,7 +253,7 @@ type Person = (instance=(name:String?
                          age:Int = 0
                          height:Float?)
                static=(addAges = { people:List<Person>
-                                   -> people.foldLeft(0, { count, person -> +(count person.age) } }
+                                   -> people.foldLeft(0, { count, person -> +(count person.age) }) }
 ```
 
 ### Inferred type conversions
@@ -274,10 +274,9 @@ I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8,
 Instead of inheritence, we use pattern matching (like ML).
 TODO: Make this work a lot more like cond above.  Maybe have a constructedBy(item signature) or something?
 ```
-match(item
-      (Person(n:name a:age h:height) = {“Person: $n$”}
-       Car(license year)             = {“Car: $license$"}
-       default                       = {“Default”}))
+item.match({ (n:name a:age h:height):Person -> “Person: $n$” }
+           { (license year):Car             -> “Car: $license$" }
+           { “Default” })
 ```
 
 Note: Enums values may have to be sub-classes of the Enum they belong to for pattern matching to work.
@@ -317,9 +316,9 @@ type Num = Int
 type Rank = FaceCard|Num
 
 ;; A card is a combination of a suit and a rank:
-type Card = { suit:Suit
-              rank:Rank
-              toString:String=cat(suit “ “ rank) } ;; default zero-argument function
+type Card = (suit:Suit
+             rank:Rank
+             toString:String = { cat(rank “ of “ suit) }) ;; default zero-argument function
 ```
 
 Function within the current namespace:
@@ -348,8 +347,8 @@ Now when you use a PlayItem, you have to destructure it:
 TODO: Destructuring syntax needs work!  Should be similar to cond() expression.
 ```
 toString(item:PlayItem) = 
-    case(item (Chip { chip -> cat(“Chip: “ chip.color) })
-              (CardWithBack { card -> cat(“Card: “ card.printCard)}))
+    item.match({ chip         -> cat(“Chip: “ chip.color) }
+               { cardWithBack -> cat(“Card: “ card.printCard)})
 ```
 
 ## Additional Ideas
