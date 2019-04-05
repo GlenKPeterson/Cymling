@@ -9,47 +9,46 @@
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy**ML**ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  The C nods to Clojure.
 
 ## Design Goals
- - Clojure with types, but somewhat different syntax.
+ - Clojure with types and C/Java/Kotlin-like syntax
  - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
  - Static Type checking, but in a way that doesn't preclude writing functions first and defining complex data types later.
  - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
- - Regular (lisp-like) syntax with very few infix operators for basic language
+ - Regular (lisp-like) syntax with very few infix operators for the basic language
  - Traditional algebraic syntax for types
- - Where practical, the language should be homoiconic because this leads to a consistency of concept and syntax that is very appealing (like Lisp).
- - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.
- - Types are related using aliases and set theory (like ML), not necessarily through object hierarchies.
+ - Homoiconic where practical, especially toString() implementations (see [Indented](https://github.com/GlenKPeterson/Indented) for the toString() library).
+ - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.  (Like Kotlin)
+ - Types are related using interfaces, aliases and set theory (like ML), not through object hierarchies.  This may mean that Inheritance is for interfaces only.  Classes can implement interfaces, but not inherit from each other.
  - Evaluative (everything is an expression – no return statements)
- - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of these can be found in [UncleJim/Paguro](https://github.com/GlenKPeterson/UncleJim) - a Java library that seeks to make the Clojure collections suitable for use in type-safe languages.  Here are the built-in types:
-   - Record (tuple / heterogenious map): `(a b c)` (items accessible by order) OR `(a=b c=d e=f)` (items also accessible by name) OR a combination of the two.
-   - List: `[a b c]`
-   - Function: `{ args -> body }`
-   - There are no built-in data types for maps or sets.
+ - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
+   - Record (tuple / heterogenious map) with items accessible by order `(a b c)`, by name `(a=b c=d e=f)`, or some combination of the two (like parameters in Kotlin).
+   - List: `[a b c]` (like Clojure)
+   - Function: `{ args -> body }` (Like Kotlin)
+   - There are no built-in data types for homogenious maps or sets.
  - Angle brackets are used for parameterized types: `List<String>`
  - Null (nil) safety with `?` type operator like Kotlin
 
 ## Syntax
-The syntax is a combination of Clojure (Lisp) and ML, with a sprinkling of Kotlin.
+The syntax is a combination of Clojure (Lisp) and ML, designed to look a little like Kotlin or Java.
 
 ### Commas
 Commas are whitespace (like Clojure).  Add them when it helps you, but the compiler treats them as spaces.
 
 ### Comments
 
-In order to leave the division symbol for division (and as a grateful to nod to Lisp), a semicolon is substituted for the otherwise C-style comment syntax.  Single-line comments are preceded by a semicolon `;`. Multi-line comments start with a semi-star `;*` and end with a star-semi `*;`. Cym-doc comments are multi-line with an extra beginning *:
+In order to look familiar, traditional C-style comments will be used.
 
 ```
-; single line comment
-;; A more-visible single-line comment
+// single line comment
 
-;*
+/*
 Multi-line comment
 Still in a multi-line comment...
-Comment ends here: *;
+Comment ends here: */
 
-;**
+/**
 Multi-line CymlingDoc comment
-*;
+*/
 ```
 
 ### Functions vs. Record literals
@@ -66,15 +65,15 @@ func(arg1 arg2)    ; function application
 ```
 
 ## Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very few operators in this language, mostly for the type system.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very few infix operators in this language, mostly for the type system.
 
 Operators (in precedence order):
  - `.` for function application
  - `=` associates keys with values in records/maps.
 
 Type operators (in precedence order):
- - `<T>` Defines a symbol (in this case, the letter `T` to be used as a parameterized type.
- - `:` Defines a type (TODO: return type, or just plain type?).
+ - `<T>` Specifies a generic type, like Java, Scala, and Kotlin
+ - `:` Introduces a type, like Scala and Kotlin.
  - `|` ("or") for union types, `&` ("and") for intersection types
 
 ### Dot Operator
@@ -100,43 +99,49 @@ Notice that this is C-like syntax.  That's because this is about types and there
 
 An instance of that definition is declared using Record syntax.  Parameters can be accessed by index (0-based), or optional names may be used for clarity.
 ```
-;; Each line produces a Person instance.
-(“Marge” 37 16.24):Person
-(name=“Fred” age=23 height=17.89):Person
-(“Little Margo” height=3.14):Person ;; Note: This person gets the default age=0.
+// Each line produces a Person instance.
+(“Marge” 37 16.24): Person
+(name=“Fred” age=23 height=17.89): Person
+(“Little Margo” height=3.14): Person // Note: This person gets the default age=0.
 ```
 
-Both of the above examples compile to something like Java objects of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/UncleJim/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a constructor, but no setter methods:
+Both of the above examples compile to something like Java objects of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
 ```
-name():String
-age():Int
-height():Float
+getName(): String
+getAge(): Int
+getHeight(): Float
 
-;; Record definition with some defaults and inferred types (name:String and Height:Float32)
-;; Note that position matters (all Person's will be defined in the order: name, age, height).
+// Record definition with some defaults and inferred types (name: String and Height: Float32)
+// Note that position matters (all Person's will be defined in the order: name, age, height).
 type Person = (name=“Marge” age:Int height=16.24)
 
-;; Instantiation:
-let( (marge=(age=37):Person
-      fred=(name="Fred" age=35):Person
-      sally=("Sally" 15 12.2):Person);; end declaration part of let block
+// Instantiation:
+val sally = Person("Sally" 15 12.2)
+val fred: Person = (name="Fred" age=35)
+val marge = (age=37):Person
 
-     marge.height() ;; returns 16.24:Float32
-     fred.age()) ;; returns 35:Int which is also the return for the entire let block.
+marge.height // 16.24: Float64
+fred.age     // 5: Int64
 ```
 
 ## Interfaces
-Interfaces (not objects) can extend the functionality of records in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
+Interfaces (not objects) can extend the functionality of other interfaces in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
 ~~TODO: Pick one:~~
 ~~A. This cannot be used with union or intersection types~~
 ```
-;; Maybe optional sugar:
-;; Person(name=“Marge” age=37 height=16.24)
+// Maybe optional sugar:
+// Person(name=“Marge” age=37 height=16.24)
 ```
 B. This will work with union or intersection types
 ```
-(name=“Marge” age=37 height=16.24):Person
-(name=“Marge” age=37 height=16.24):Person|Employee
+(name=“Marge” age=37 height=16.24): Person
+(name=“Marge” age=37 height=16.24): Person|Employee
+```
+C. Consider requiring interfaces for intersection types and type-aliases for union types
+```
+typealias PnE = Person|Employee
+Person("Marge", 37, 16.24)
+PnE("Marge 37 16.24)
 ```
 
 ## Functions
@@ -146,10 +151,10 @@ Anonymous function syntax is copied from Kotlin (formerly used a syntax involvin
 
 ```
 val myFn = {“hello!”}
-;; defined myFn:Fn0<String>
+// defined myFn:Fn0<String>
 
-myFn() ;; Apply the function
-;; "hello!"
+myFn() // Apply the function
+// "hello!"
 
 printLater(myFn) ;; Pass the function to another function (so it can be applied later)
 
