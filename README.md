@@ -100,25 +100,64 @@ Notice that this is C-like syntax.  That's because this is about types and there
 An instance of that definition is declared using Record syntax.  Parameters can be accessed by index (0-based), or optional names may be used for clarity.
 ```
 // Each line produces a Person instance.
-(“Marge” 37 16.24): Person
-(name=“Fred” age=23 height=17.89): Person
-(“Little Margo” height=3.14): Person // Note: This person gets the default age=0.
+Person(“Marge” 37 16.24)
+Person(name=“Fred” age=23 height=17.89)
+Person(“Little Margo” height=3.14) // gets the default age=0.
 ```
 
-Both of the above examples compile to something like Java objects of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
+Both of the above examples compile to something like Plain Old Java Objects (POJO's) of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
+```java
+public class Person implements IndentedStringable {
+    private final String name;
+    private final Long age;
+    private final Double height;
+    private Person(String p1, Long p2, Double p3) {
+        name = p1;
+        age = p2;
+        height = p3;
+    }
+    public String getName() { return name; }
+    public long getAge() { return age; }
+    public double getHeight() { return height; }
+    
+    @Override
+    public String indentedStr(int indent) {
+        return "Person(" + stringify(name) +
+               " " + stringify(age) +
+               " " + stringify(height) + ")";
+    }
+    
+    @Override
+    public String toString() { return indentedStr(0); }
+    
+    @Override
+    public int hashCode() { return EQUATOR.hash(this); }
+    
+    @Override
+    public boolean equals(Object other) { return EQUATOR.eq(this, other); }
+    
+    public static Person of(String name, Long age, Double height) {
+        return new Person(name, age, height);
+    }
+    
+    public static Equator<Person> EQUATOR = ... // Defines equality
+}
 ```
-getName(): String
-getAge(): Int
-getHeight(): Float
+Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It implements a Tuple3 interface for optional duck-typing, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations.
 
+```
 // Record definition with some defaults and inferred types (name: String and Height: Float32)
 // Note that position matters (all Person's will be defined in the order: name, age, height).
-type Person = (name=“Marge” age:Int height=16.24)
+type Person {
+    name = “Marge” // String
+    age:Int
+    height = 16.24 // Float
+}
 
 // Instantiation:
 val sally = Person("Sally" 15 12.2)
-val fred: Person = (name="Fred" age=35)
-val marge = (age=37):Person
+val fred = Person(name="Fred" 35) // age is 35, height is 16.24
+val marge = Person(age=37)
 
 marge.height // 16.24: Float64
 fred.age     // 5: Int64
@@ -126,22 +165,16 @@ fred.age     // 5: Int64
 
 ## Interfaces
 Interfaces (not objects) can extend the functionality of other interfaces in a pseudo-Object-Oriented way.  When creating data that you intend to treat as implementing an interface, simply attach the name of the interface to the data to give it a type when you construct it:
-~~TODO: Pick one:~~
-~~A. This cannot be used with union or intersection types~~
 ```
-// Maybe optional sugar:
-// Person(name=“Marge” age=37 height=16.24)
+Person(name=“Marge” age=37 height=16.24)
 ```
-B. This will work with union or intersection types
+Require interfaces for intersection types and type-aliases for union types
 ```
-(name=“Marge” age=37 height=16.24): Person
-(name=“Marge” age=37 height=16.24): Person|Employee
-```
-C. Consider requiring interfaces for intersection types and type-aliases for union types
-```
-typealias PnE = Person|Employee
+typealias PnE = Person | Employee
 Person("Marge", 37, 16.24)
-PnE("Marge 37 16.24)
+PnE("Marge" 37 16.24)
+interface GoodPerson implements Person, Good
+GoodPerson("Marge" 37 16.24)
 ```
 
 ## Functions
@@ -150,25 +183,25 @@ Functions are first class.  To name a function, simply assign it to a variable, 
 Anonymous function syntax is copied from Kotlin (formerly used a syntax involving the λ character, but not exactly equivalent to Lambda Calculus).  The basic syntax of a function definition is `{ arguments -> functionBody }`.  Arguments are the same as a record (but do not require the parens), the body is any expression which will only be executed when the function is called.  A function without the arrow `{ expression }` assumes zero arguments and is effectively a "thunk" (lazy evaluation).  As syntactic sugar, Lots of Irratating Superfluous Parentheses (LISP) can be removed by eliminating the record parens before the arrow and eliminating parens which enclose a single lambda.
 
 ```
-val myFn = {“hello!”}
+val myFn = { "hello!" }
 // defined myFn:Fn0<String>
 
 myFn() // Apply the function
 // "hello!"
 
-printLater(myFn) ;; Pass the function to another function (so it can be applied later)
+printLater(myFn) // Pass the function to another function (so it can be applied later)
 
-val myFn2 = { name:String ->
+// Define myFn2:Fn1<String,String>
+val myFn2 = { name: String ->
               "Hello $name$. Pleased to meet you!" }
-;; defined myFn2:Fn1<String,String>
 
 myFn2("Kelly")
-;; "Hello Kelly. Pleased to meet you!"
+// "Hello Kelly. Pleased to meet you!"
 ```
 
 This means that function pointers require no special handling.
 ```
-val marge=(age=37):Person
+val marge=Person(age=37)
 
 marge.age() ;; function application
 ;; 37:Int
