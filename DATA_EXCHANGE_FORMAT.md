@@ -82,24 +82,9 @@ Person(3 “Auntie Em” 3.14, children=[Person(1) Person(2)])
 Type/Class names can be fully specified for readability, or aliased for brevity.
 Variables can be declared to use instead of the id-based scheme:
 
-// Instantiation:
-```
-typealias P = Person
-val sally = P("Sally" 12.2)
-val fred = P(name="Fred" 35.1)
-val auntEm = P("Auntie Em", 3.14, children=[sally, fred])
-```
-
-## Types
-Any is the progenitor super-type.
-nil is a sub-type of most things.
-Nothing might be a sub-type of nil indicating that no valid type can be used?
-For now, there are no union or intersection types.
-For now, there are no interfaces or inheritance (how would you decide field order?).
-
 # License
 
-Copyright 2015 Glen K. Peterson
+Copyright 2015-2020 Glen K. Peterson
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 http://www.apache.org/licenses/LICENSE-2.0
