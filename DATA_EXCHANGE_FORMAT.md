@@ -7,12 +7,12 @@ Designed for serialization and deserialization.
 Zipped data format:
 ```
 cym/              // Everything goes in a root folder so that when you unzip, it's all contained.
-cym/data/         // The actual data files.  Should be parsed third after version number and types.
-cym/meta/         // Details about this file go here
-cym/meta/version  // The version number x.y.z in a UTF-8 text file - parse this first as the parsing rules may change in newer versions.
-cym/types/        // All classes used in this zip are defined in this folder, one per file, named the same as subdirectory (becomes package) and file name (becomes class name).
-                  // This folder should be parsed second.
-                  // Global typealiases can be defined in these files too.
+cym/version.txt   // The version number x.y.z - parse this first as the parsing rules may change in newer versions.
+cym/allTypes.type // All classes used in this zip are defined in this file.  A future version may allow package/folders and individual type files.
+                  // This file should be parsed second.
+                  // Global typealiases can be defined in this file too.
+
+cym/data/         // The actual data files go here.  Should be parsed third after version number and types.
 ```
 All files are UTF-8 text.
 All filenames besides cym/meta/version are valid Cymling user-defined class names (start with an uppercase letter, no periods, etc.).
@@ -109,7 +109,6 @@ At your option, you may elect to use this under the Eclipse public license as we
 
 # Reserved syntax
 ```
-. field access
 , whitespace
 () tuple/record (heterogenious map that stores key order from creation)
 [] vector/list
