@@ -29,23 +29,6 @@ Each class has an `id: Long` field as the first field which will uniquely identi
  - Angle brackets are used for parameterized types: `List<String>`
  - Null (nil) safety with `?` type operator like Kotlin
 
-### Comments
-
-In order to look familiar, traditional C-style (Java/Kotlin) comments will be used.
-
-```
-// single line comment
-
-/*
-Multi-line comment
-Still in a multi-line comment...
-Comment ends here: */
-
-/**
-Multi-line CymDoc comment
-*/
-```
-
 Operators (in precedence order):
  - `=` associates keys with values in records/maps.
 
