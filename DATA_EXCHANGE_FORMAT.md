@@ -17,7 +17,9 @@ cym/data/         // The actual data files go here.  Should be parsed third afte
 All files are UTF-8 text.
 All filenames besides cym/meta/version are valid Cymling user-defined class names (start with an uppercase letter, no periods, etc.).
 The receiver of this data can supply a map of types from cymData/meta/classes to their own compatible types, or their system can guess at default types already loaded by the classloader that match these definitions.
+
 Each class has an `id: Long` field as the first field which will uniquely identify each object of a given type.
+This allows for forward references and data deduplication so that the stored graph can be self-referential
 
  - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
    - Records (tuples / heterogenious map) with items accessible by order `(1 "hello" 3.5)`.
