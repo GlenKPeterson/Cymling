@@ -18,7 +18,7 @@ All files are UTF-8 text.
 All filenames besides cym/meta/version are valid Cymling user-defined class names (start with an uppercase letter, no periods, etc.).
 The receiver of this data can supply a map of types from cymData/meta/classes to their own compatible types, or their system can guess at default types already loaded by the classloader that match these definitions.
 
-Each class has an `id: Long` field as the first field which will uniquely identify each object of a given type.
+Each class has an implicit `_id: Long` field as the first field which will uniquely identify each object of a given type.
 This allows for forward references and data deduplication so that the stored graph can be self-referential
 
  - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
@@ -43,7 +43,7 @@ All types must be named.
 Names and typealiases must be unique per zip file.
 Names will be resolved to type descriptions in the Classes file.
 The resolution may go to Tuples with reified generic types, or to fully qualified class names.
-The first field, `id: Long` is *implied* and need not be specified.
+The first field, `_id: Long` is *implied* and need not be specified.
 ```
 type my.package.Person(
     name: String // Required String parameter
@@ -60,12 +60,11 @@ An instance of that definition is declared using Record syntax.  Parameters can 
 Person(1 “Marge” 16.24 37)
 Person(2 “Fred” 17.89) // gets the default age=0.
 // We can skip the age parameter (taking the default of zero) and specify a subsequent parameter by name.
-// Notice how this references previously defined People by ID.
+// Notice how this references previously defined People by _id.
 // Forward references will probably be allowed, but maybe not in phase one.
 Person(3 “Auntie Em” 3.14, children=[Person(1) Person(2)])
 ```
 Type/Class names can be fully specified for readability, or aliased for brevity.
-Variables can be declared to use instead of the id-based scheme:
 
 # License
 
