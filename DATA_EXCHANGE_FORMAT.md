@@ -66,6 +66,10 @@ Person(3 “Auntie Em” 3.14, children=[Person(1) Person(2)])
 ```
 Type/Class names can be fully specified for readability, or aliased for brevity.
 
+### Deserializing Types
+
+The deserializing code can accept everything as generic tuples, or provide a mapping: `Map<String,Class>` to translate from the Cym-data to Java classes (or classes in another language/paradigm).
+
 # License
 
 Copyright 2015-2020 Glen K. Peterson
