@@ -390,6 +390,34 @@ toString(item:PlayItem) =
                { cardWithBack -> cat(“Card: “ card.printCard)})
 ```
 
+
+# Reserved syntax
+```
+. field access
+, whitespace
+() tuple/record (heterogenious map that stores key order from creation)
+[] vector/list
+%() homogeneous map
+#() homogeneous set
+{ -> } Function
+= type assignment, or key-value pair binding.
+<> parameterized type
+@ introduces an annotation
+: introduces a type
+| 'or' for union types
+& 'and' for intersection type
+? for 'or nil' types
+```
+
+## Keywords
+```
+type introduces a type
+default The default case for match and cond statements
+match for type matching (ML calls this "pattern matching" but Java uses that to mean Regex)
+nil for null or false
+t for true
+```
+
 ## Additional Ideas
 From Josh Bloch: https://youtu.be/EduWekviwRg
 
@@ -411,28 +439,3 @@ http://www.eclipse.org/legal/epl-2.0
 SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
-# Reserved syntax
-```
-. field access
-, whitespace
-() tuple/record (heterogenious map that stores key order from creation)
-[] vector/list
-{ -> } Function
-= type assignment, or key-value pair binding.
-<> parameterized type
-@ introduces an annotation
-: introduces a type
-| 'or' for union types
-& 'and' for intersection type
-? for 'or nil' types
-```
-
-## Keywords
-```
-type introduces a type
-default The default case for match and cond statements
-match for type matching (ML calls this "pattern matching" but Java uses that to mean Regex)
-nil for null or false
-t for true
-```
