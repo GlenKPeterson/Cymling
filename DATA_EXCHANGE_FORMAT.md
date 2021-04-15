@@ -5,7 +5,7 @@ Sort of a type-safe version of JSON or Clojure data.
 Designed for serialization and deserialization.
 
 Zipped data format:
-`
+```
 cym/              // Everything goes in a root folder so that when you unzip, it's all contained.
 cym/data/         // The actual data files.  Should be parsed third after version number and types.
 cym/meta/         // Details about this file go here
@@ -13,7 +13,7 @@ cym/meta/version  // The version number x.y.z in a UTF-8 text file - parse this 
 cym/types/        // All classes used in this zip are defined in this folder, one per file, named the same as subdirectory (becomes package) and file name (becomes class name).
                   // This folder should be parsed second.
                   // Global typealiases can be defined in these files too.
-`
+```
 All files are UTF-8 text.
 All filenames besides cym/meta/version are valid Cymling user-defined class names (start with an uppercase letter, no periods, etc.).
 The receiver of this data can supply a map of types from cymData/meta/classes to their own compatible types, or their system can guess at default types already loaded by the classloader that match these definitions.
