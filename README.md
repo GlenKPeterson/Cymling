@@ -5,6 +5,7 @@
  - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
  - Functional (first class functions, immutability is assumed/easier/preferred)
  - Type-safe (with type aliases like ML, not necessarily Object Oriented)
+ - Has a compatable [data exchange format](DATA_EXCHANGE_FORMAT.md)
 
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy**ML**ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  The C nods to Clojure.
 
