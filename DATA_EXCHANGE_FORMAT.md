@@ -25,7 +25,7 @@ Each class has an `id: Long` field as the first field which will uniquely identi
    - List: `[a b c]` (like Clojure)
    - There are no built-in data types for homogenious maps or sets (yet).
    If there are, they will probably not use angle brackets or curly braces, as the language reserves those for types and functions respectively.
-   They may do something like `#()` for a set, `%()` for a map, `$()` for a linked-list...
+   They may do something like `#()` for a set, `%()` for a map...
  - Angle brackets are used for parameterized types: `List<String>`
  - Null (nil) safety with `?` type operator like Kotlin
 
