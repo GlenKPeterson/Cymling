@@ -48,7 +48,7 @@ Still in a multi-line comment...
 Comment ends here: */
 
 /**
-Multi-line CymlingDoc comment
+Multi-line CymDoc comment in .md format
 */
 ```
 
@@ -63,6 +63,7 @@ Multi-line CymlingDoc comment
 ```
 func(arg1 arg2)    ; function application
 (“Marge” 37 16.24) ; record/tuple of 3 items with types String, Int and Float
+Person(“Marge” 37 16.24) ; Person class instantiated 3 items with types String, Int and Float
 ```
 
 ## Operators
@@ -91,10 +92,9 @@ first(arg1).second(arg2)
 ## Records
 Like ML, we'll use records.  This language is type safe, but it does not require you to define types beforehand.  Just make records and use them.  You'll probably want to define aliases for commonly used records, especially if you pass them to functions.  For that, there's a built-in `type` keyword.  A data definition looks like this:
 ```
-type Person = (instance=(name:String?
-                         age:Int = 0
-                         height:Float?)
-               static=())
+type Person(name: String?
+            age: Int = 0
+            height:Float?)
 ```
 Notice that this is C-like syntax.  That's because this is about types and therefore deserves to *look* different from the more lispy grammar of the rest of the language.
 
@@ -149,11 +149,11 @@ Note the private constructor and public factory method.  This follows Joshua Blo
 ```
 // Record definition with some defaults and inferred types (name: String and Height: Float32)
 // Note that position matters (all Person's will be defined in the order: name, age, height).
-type Person {
-    name = “Marge” // String
-    age:Int
-    height = 16.24 // Float
-}
+type Person(
+    name = “Marge” // String with default value
+    age: Int       // required parameter
+    height = 16.24 // Float with default value
+)
 
 // Instantiation:
 val sally = Person("Sally" 15 12.2)
