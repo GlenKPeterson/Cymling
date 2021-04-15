@@ -69,8 +69,10 @@ Variables can be declared to use instead of the id-based scheme:
 
 Copyright 2015-2020 Glen K. Peterson
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+This program and the accompanying materials are made available under the
+terms of the Apache License, Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0
+or the Eclipse Public License 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0
 
-At your option, you may elect to use this under the Eclipse public license as well.  It's user's choice.
+SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
