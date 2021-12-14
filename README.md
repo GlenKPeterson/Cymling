@@ -23,8 +23,8 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
  - Evaluative (everything is an expression – no return statements)
  - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
    - Record (tuple / heterogenious map) with items accessible by order `(a b c)`, by name `(a=b c=d e=f)`, or some combination of the two (like parameters in Kotlin).
-   - List: `[a b c]` (like Clojure)
-   - Function: `{ args -> body }` (Like Kotlin)
+   - Vector/ArrayList/AssociativeArray: `[a b c]` (like Clojure)
+   - Function: `{ optionalArgs -> body }` (Like Kotlin)
    - There are no built-in data types for homogenious maps or sets.
  - Angle brackets are used for parameterized types: `List<String>`
  - Null (nil) safety with `?` type operator like Kotlin
@@ -306,7 +306,7 @@ type Person = (instance=(name:String?
 ```
 
 ## Strings
-*Wish List:*
+*Wishlist:*
 I'd love to have Str8 (pronounced “Straight”) to be native support for UTF8, have all serialization use UTF8, and give Str8 a .toUtf16() method to convert to Java style strings.  This would require a bunch of work that I don't want to do up front, but over time I think it would be a big win.  Also, it would be good to rewrite the regular expressions library to use this and use it quickly.  When people use emoji, we don't want to be counting “code points” as opposed to characters the way you have to in Java.  UTF8 seems to be the new world standard...
 
 ## Pattern Matching
