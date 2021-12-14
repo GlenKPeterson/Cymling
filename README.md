@@ -1,6 +1,6 @@
 # Cymling Programming Language
 
-*Design Unfinished: Comments Welcome!*
+*Rough Ideas Follow: Feel free to talk me out of some things!*
 
  - Nearly homoiconic (like a lisp, with it's own JSON-like data definition syntax)
  - Functional (first class functions, immutability is assumed/easier/preferred)
@@ -144,7 +144,7 @@ public class Person implements IndentedStringable {
     public static Equator<Person> EQUATOR = ... // Defines equality
 }
 ```
-Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It implements a Tuple3 interface for optional duck-typing, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations.
+Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It implements a Tuple3 interface for optional duck-typing, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations (in the generated code).
 
 ```
 // Record definition with some defaults and inferred types (name: String and Height: Float32)
@@ -200,18 +200,25 @@ myFn2("Kelly")
 // "Hello Kelly. Pleased to meet you!"
 ```
 
-This means that function pointers require no special handling.
+This means that function pointers require no special handling (is this a good idea?).
 ```
 val marge=Person(age=37)
 
-marge.age() ;; function application
-;; 37:Int
+marge.age() // function application
+// 37:Int
 
-marge.age ;; Returns the value of the field "age" (which is a function).
-;; Fn0<Int>
+marge.age // Returns the value of the field "age" (which is a function).
+// Fn0<Int>
+```
+
+Alternately, some other syntax could access the function:
+```
+marge.age // 37:Int function application
+marge&age // Fn0<Int> function reference
 ```
 
 ## Other Operators
+This may be a bad idea...
 All other (non-infix) operators have syntax just like functions.  Because they are functions, they can be lazily evaluated:
 
 ```
@@ -235,7 +242,7 @@ cond(a    {“a”}          ;; eager if, followed by lazy then
 cond
 ;; Fn3<Bool,Fn0<T>,Fn0<T>,T>
 ```
-There is no "if" without an "else" because such a statement would lack a return type for the false condition.
+Should we allow an "if" without an "else" branch?  Such a statement would lack a return type for the false condition.
 
 ## Type System
 
@@ -357,18 +364,18 @@ type Rank = FaceCard|Num
 ;; A card is a combination of a suit and a rank:
 type Card = (suit:Suit
              rank:Rank
-             toString:String = { cat(rank “ of “ suit) }) ;; default zero-argument function
+             toString:String = { concat(rank “ of “ suit) }) ;; default zero-argument function
 ```
 
 Function within the current namespace:
 ```
 let(printCard:Fn<Card,String> =      ; variable name and optional type
-     { card:Card                  ; function definition.  Arguments form a record
-       -> "$card.suit$ $card.rank$"}) ; function body
+     { card:Card ->                  ; function definition.  Arguments form a record
+       "$card.suit$ $card.rank$"}) ; function body
 ```
 Here we extend a type:
 ```
-type WithBack = showBack={“*****”}
+type WithBack = (showBack=“*****”)
 
 type CardWithBack Card & WithBack
 ```
@@ -386,8 +393,8 @@ Now when you use a PlayItem, you have to destructure it:
 TODO: Destructuring syntax needs work!  Should be similar to cond() expression.
 ```
 toString(item:PlayItem) = 
-    item.match({ chip         -> cat(“Chip: “ chip.color) }
-               { cardWithBack -> cat(“Card: “ card.printCard)})
+    item.match({ chip         -> cat(“Chip: “ chip.color()) }
+               { cardWithBack -> cat(“Card: “ card.printCard())})
 ```
 
 
@@ -397,8 +404,6 @@ toString(item:PlayItem) =
 , whitespace
 () tuple/record (heterogenious map that stores key order from creation)
 [] vector/list
-%() homogeneous map
-#() homogeneous set
 { -> } Function
 = type assignment, or key-value pair binding.
 <> parameterized type
@@ -407,6 +412,7 @@ toString(item:PlayItem) =
 | 'or' for union types
 & 'and' for intersection type
 ? for 'or nil' types
+# (de)reference
 ```
 
 ## Keywords
@@ -428,7 +434,7 @@ From Josh Bloch: https://youtu.be/EduWekviwRg
 
 # License
 
-Copyright 2015-2020 Glen K. Peterson
+Copyright 2015-2021 Glen K. Peterson
 
 This program and the accompanying materials are made available under the
 terms of the Apache License, Version 2.0 which is available at
