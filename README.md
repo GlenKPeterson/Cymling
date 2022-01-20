@@ -19,25 +19,25 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
  - Traditional algebraic syntax for types
  - Homoiconic where practical, especially toString() implementations (see [Indented](https://github.com/GlenKPeterson/Indented) for the toString() library).
  - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.  (Like Kotlin)
- - Types are related using interfaces, aliases and set theory (like ML), not through object hierarchies.  This may mean that Inheritance is for interfaces only.  Classes can implement interfaces, but not inherit from each other.
+ - Types are related using interfaces, aliases and set theory (like ML), not through object hierarchies.  Inheritance is for interfaces only.  Classes can implement interfaces, but not inherit from each other.  Some class inheritance may be allowed, but only with something like a @JvmExtends annotation for compatibility with Object-Oriented languages. 
  - Evaluative (everything is an expression – no return statements)
  - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
-   - Record (tuple / heterogenious map) with items accessible by order `(a b c)`, by name `(a=b c=d e=f)`, or some combination of the two (like parameters in Kotlin).
+   - Record (tuple / heterogenious map) with items accessible by order `(a b c)`, by name `(a=b c=d e=f)`, or some combination of the two (like parameters in Kotlin).  Function parameters look like a record because they are roughly equivalent to a record `someFun(x y z)`
    - Vector/ArrayList/AssociativeArray: `[a b c]` (like Clojure)
    - Function: `{ optionalArgs -> body }` (Like Kotlin)
-   - There are no built-in data types for homogenious maps or sets.
+   - There are no built-in data types for homogenious maps or sets.  Those will be in the standard library (and probably copied from Clojure).
  - Angle brackets are used for parameterized types: `List<String>`
  - Null (nil) safety with `?` type operator like Kotlin
 
 ## Syntax
-The syntax is a combination of Clojure (Lisp) and ML, designed to look a little like Kotlin or Java.
+The syntax is a combination of Clojure (Lisp) and ML, designed to look C-style, like Kotlin/Java/JavaScript.
 
 ### Commas
 Commas are whitespace (like Clojure).  Add them when it helps you, but the compiler treats them as spaces.
 
 ### Comments
 
-In order to look familiar, traditional C-style comments will be used.
+In order to look familiar, traditional C-style comments will be used.  Or possibly a semicolon starts a comment like Lisp?
 
 ```
 // single line comment
@@ -55,15 +55,15 @@ Multi-line CymDoc comment in .md format
 ### Functions vs. Record literals
 **Lisp** puts the the function name to the right of the parenthesis, which causes plain lists to require quoting:
 ```
-(func arg1 arg2)    ; call/apply funct with arguments arg1 and arg2.
-'(“Marge” 37 16.24) ; a literal list of 3 items.
+(func arg1 arg2)    // call/apply funct with arguments arg1 and arg2.
+'(“Marge” 37 16.24) // a literal list of 3 items.
 ```
 
-**Cymling** puts the function to the left and literal Records (not lists) will not require quoting:
+**Cymling** puts the function to the left and literal Records (not lists) will NOT require quoting:
 ```
-func(arg1 arg2)    ; function application
-(“Marge” 37 16.24) ; record/tuple of 3 items with types String, Int and Float
-Person(“Marge” 37 16.24) ; Person class instantiated 3 items with types String, Int and Float
+func(arg1 arg2)    // function application
+(“Marge” 37 16.24) // record/tuple of 3 items with types String, Int and Float
+Person(“Marge” 37 16.24) // Person class instantiated 3 items with types String, Int and Float
 ```
 
 ## Operators
@@ -106,7 +106,7 @@ Person(name=“Fred” age=23 height=17.89)
 Person(“Little Margo” height=3.14) // gets the default age=0.
 ```
 
-Both of the above examples compile to something like Plain Old Java Objects (POJO's) of type Person (specifically a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
+Both of the above examples compile to something like Plain Old Java Objects (POJO's) of type Person (possibly a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
 ```java
 public class Person implements IndentedStringable {
     private final String name;
@@ -141,10 +141,10 @@ public class Person implements IndentedStringable {
         return new Person(name, age, height);
     }
     
-    public static Equator<Person> EQUATOR = ... // Defines equality
+    public static Equator<Person> getDefaultEquator() { ... // Defines equality
 }
 ```
-Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It implements a Tuple3 interface for optional duck-typing, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations (in the generated code).
+Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It may implement a Tuple3-like interface, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations (in the generated code).
 
 ```
 // Record definition with some defaults and inferred types (name: String and Height: Float32)
@@ -246,6 +246,8 @@ Should we allow an "if" without an "else" branch?  Such a statement would lack a
 
 ## Type System
 
+Types should be record-based.  Meaning that a type definition is based on named members of a data structure and their types.  Thus, Person(name:String age:Int) would be defined by its two members (name and age) and their types (String and Int).  Type inference will work on these structures as well.  This should allow Duck Typing unless you annotate your type with @Strict or similar.  So that Car(name:String age:Int) will by default be interchangeable with Person.  If we add a `car:Car` parameter to `Person`, it can (by default) still be passed to any function expecting a type with `name:String` and/or `age:Int` member.  Duck typing.  In this case, you may want to be careful to pass `somePerson.car` or add an interface or a @Strict somewhere. Or add an Inferred Type Conversion `toCar()` method as detailed below?  Really, I need to play with this and see how it comes out in the wash.
+
 Java Generics, p. 16 by Naftalin/Wadler has an example that shows why mutable collections cannot safely be covariant.  *Immutable* collections *can* be covariant because of their nesting properties.  You can have a `ImList<Int>` and add a `Float` to it and you'll get back the union type `ImList<Int|Float>` which can then be safely cast to a `ImList<Number>` (`Number` is the most specific common ancestor of both `Int` and `Float`).  If the List were mutable, you'd have to worry about other pointers to the same list still thinking it was a `List<Int>`, but immutable collections solve that problem.
 
 That paragraph assumes inheritance and, for Java compatibility, it makes sense.  Cymling's view of Java's inheritance in this case is: `type Number = Int | Float` where `Int` and `Float` are both built-in types.
@@ -257,14 +259,12 @@ There may come a time when the type system needs to choose between being mathema
 ## Defining Types
 To make a person type, you need:
 ```
-;; Defines a type called Nameable that has a name() method which returns a String or null
-type Nameable = (instance=(name:String?)
-                 static=())
+;; Defines a type called Nameable that has a name() instance method which returns a String or null
+type Nameable = (name:String?)
 
 ;; Defines a type called Person that has a name(), age() and height() methods.
 ;; the name() method comes from Nameable.
-type Person = Nameable & (instance=(age:Int height:Float)
-                          static=())
+type Person = Nameable & (age:Int height:Float)
 ```
 
 Here is a let block that performs some pretty simple logic on some people (fred is declared, but never used):
@@ -293,14 +293,21 @@ main( (args:List<String>)
            1))
 ```
 
-### Static methods
+### Static/Class methods and fields
 ```
-type Person = (instance=(name:String?
-                         age:Int = 0
-                         height:Float?)
+type Person = (name:String?
+               age:Int = 0
+               height:Float?
                static=(addAges = { people:List<Person>
                                    -> people.foldLeft(0, { count, person -> +(count person.age) }) }
 ```
+
+#### Default Static methods
+Each record will have a generated `defaultEquator()` method which can be overridden.
+It will default to comparing any unique fields or unique combinations of fields.
+Uniqueness will work like the SQL UNIQUE and be declared with `uniqueFields=name height` or similar in a constraints section (similar to the static section).
+For the JVM, the `.equals(other)` method implementation will be implemented as `defaultEquator(this, other)`.
+
 
 ### Inferred type conversions
 If you give your type fromXXXX or toXXXX static methods, the compiler can make this conversion.  For instance if you have a type Person, just add a static method as follows:
