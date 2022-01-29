@@ -3,6 +3,7 @@ grammar cymling ;
 file_: form * EOF;
 
 form: literal
+    | fun_block
     | record
     | vector
     ;
@@ -15,7 +16,7 @@ record: '(' pair* ')' ;
 
 vector: '[' forms ']' ;
 
-fun_block: '{' forms '}' ;
+fun_block: '{' (symbol* '->')? forms '}' ;
 
 literal
     : string_
@@ -130,7 +131,7 @@ NAME: SYMBOL_HEAD SYMBOL_REST* (':' SYMBOL_REST+)* ;
 fragment
 SYMBOL_HEAD
     : ~('0' .. '9'
-        | '^' | '`' | '\'' | '"' | '#' | '~' | '@' | ':' | '<' | '>' | '(' | ')' | '[' | ']' | '{' | '}' // FIXME: could be one group
+        | '^' | '`' | '\'' | '"' | '#' | '~' | '@' | ':' | '<' | '=' | '>' | '(' | ')' | '[' | ']' | '{' | '}'
         | [ \n\r\t,] // FIXME: WS
         )
     ;
@@ -139,7 +140,6 @@ fragment
 SYMBOL_REST
     : SYMBOL_HEAD
     | '0'..'9'
-    | '.'
     ;
 
 // Discard
