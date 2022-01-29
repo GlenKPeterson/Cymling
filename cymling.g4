@@ -4,19 +4,24 @@ file_: form * EOF;
 
 form: literal
     | fun_block
+//    | fun_appl
     | record
     | vector
     ;
 
 forms: form* ;
 
-pair: symbol '=' form;
+pair: lcf_sym '=' form;
 
 record: '(' pair* ')' ;
 
 vector: '[' forms ']' ;
 
-fun_block: '{' (symbol* '->')? forms '}' ;
+fun_block: '{' (lcf_sym* '->')? forms '}' ;
+
+//fun_appl: lcf_sym '(' (form | pair)* ')' ;
+
+// fluent_appl: fun_appl ( '.' fun_appl )+ ;
 
 literal
     : string_
@@ -25,7 +30,7 @@ literal
     | null_
     | BOOLEAN
     | keyword
-    | symbol
+    | lcf_sym
     | param_name
     ;
 
@@ -56,9 +61,9 @@ keyword: macro_keyword | simple_keyword;
 simple_keyword: '%' symbol;
 macro_keyword: '%' '%' symbol;
 
-symbol: ns_symbol | simple_sym;
-simple_sym: SYMBOL;
-ns_symbol: NS_SYMBOL;
+symbol: lcf_sym | ucf_sym;
+lcf_sym: LCF_SYMBOL;
+ucf_sym: UCF_SYMBOL;
 
 param_name: PARAM_NAME;
 
@@ -111,14 +116,9 @@ BOOLEAN : 'true' | 'false' ;
 
 DOT : '.' ;
 
-SYMBOL
-    : '/'
-    | NAME
-    ;
+LCF_SYMBOL : LCF_SYMBOL_HEAD SYMBOL_REST* ;
 
-NS_SYMBOL
-    : NAME '/' SYMBOL
-    ;
+UCF_SYMBOL : UCF_SYMBOL_HEAD SYMBOL_REST* ;
 
 PARAM_NAME: 'it';
 
@@ -126,20 +126,16 @@ PARAM_NAME: 'it';
 //--------------------------------------------------------------------
 
 fragment
-NAME: SYMBOL_HEAD SYMBOL_REST* (':' SYMBOL_REST+)* ;
+LCF_SYMBOL_HEAD : [\p{lowerCase}] ;
 
 fragment
-SYMBOL_HEAD
-    : ~('0' .. '9'
-        | '^' | '`' | '\'' | '"' | '#' | '~' | '@' | ':' | '<' | '=' | '>' | '(' | ')' | '[' | ']' | '{' | '}'
-        | [ \n\r\t,] // FIXME: WS
-        )
-    ;
+UCF_SYMBOL_HEAD : [\p{upperCase}] ;
 
 fragment
 SYMBOL_REST
-    : SYMBOL_HEAD
-    | '0'..'9'
+    : ~('^' | '`' | '\'' | '"' | '#' | '~' | '@' | ':' | '<' | '=' | '>' | '(' | ')' | '[' | ']' | '{' | '}'
+              | [ \n\r\t,]
+              )
     ;
 
 // Discard
