@@ -10,24 +10,31 @@
 Cymling is a rarely used word for a pattypan squash.  It's also one of the few short words in the English language that have the letters ML in them ("Cy**ML**ing") which is a nod to the ML programming language.  ML because it showed me that static typing does not need to be Object Oriented.  The C nods to Clojure.
 
 ## Design Goals
- - Clojure with types and C/Java/Kotlin-like syntax
+ - Yet another typed Clojure with and superficially C/JavaScript/Kotlin-like syntax
+ - Static Type checking based on Records, but in a way that doesn't preclude writing functions first and defining complex data types later.
  - Immutability is the default.
  - Applicative Order by default (eager, not like Haskell)
- - Static Type checking, but in a way that doesn't preclude writing functions first and defining complex data types later.
- - Type inference everywhere except function parameters and return types (the only place type safety is proven to improve comprehension).
+ - Type inference for local variables, but not for function parameters or return types (the only places type safety is proven to improve comprehension).
  - Regular (lisp-like) syntax with very few infix operators for the basic language
  - Traditional algebraic syntax for types
  - Homoiconic where practical, especially toString() implementations (see [Indented](https://github.com/GlenKPeterson/Indented) for the toString() library).
- - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.  (Like Kotlin)
- - Types are related using interfaces, aliases and set theory (like ML), not through object hierarchies.  Inheritance is for interfaces only.  Classes can implement interfaces, but not inherit from each other.  Some class inheritance may be allowed, but only with something like a @JvmExtends annotation for compatibility with Object-Oriented languages. 
- - Evaluative (everything is an expression – no return statements)
- - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.  Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).  Here are the built-in types:
-   - Record (tuple / heterogenious map) with items accessible by order `(a b c)`, by name `(a=b c=d e=f)`, or some combination of the two (like parameters in Kotlin).  Function parameters look like a record because they are roughly equivalent to a record `someFun(x y z)`
-   - Vector/ArrayList/AssociativeArray: `[a b c]` (like Clojure)
+ - No primitives (int, float, etc.).  Built-in and user-defined data behave the same.  (Like Kotlin before version 1.6)
+ - Types are related using interfaces, aliases and set theory (like ML), not through object hierarchies.
+   Inheritance is for interfaces only.
+   Records (a little like Classes) can implement interfaces, but cannot inherit from each other.
+   Some class inheritance may be allowed with something like a @JvmExtends annotation for compatibility with Object-Oriented libraries.
+ - Evaluative: almost everything is an expression – no return statements.
+ - Built-in data types like Clojure (or JSON) except the fundamental unit is a Record instead of a linked list.
+   Default implementations of JVM collections can be found in [Paguro](https://github.com/GlenKPeterson/Paguro).
+   Built-in types:
+   - Record (like a heterogeneous map) with items accessible by by name `(a=b c=d e=f)`, order `(a b c)`, or some combination of the two (like parameters in Kotlin).
+     Function parameters look like a record because they are roughly equivalent to a record `someFun(x y z)`
+   - Vector (ArrayList/AssociativeArray): `[a b c]` (like Clojure)
    - Function: `{ optionalArgs -> body }` (Like Kotlin)
-   - There are no built-in data types for homogenious maps or sets.  Those will be in the standard library (and probably copied from Clojure).
+   - There are no built-in data types for homogeneous maps or sets.
+     Those will be in the standard library (based on Paguro which was forked from Clojure).
  - Angle brackets are used for parameterized types: `List<String>`
- - Null (nil) safety with `?` type operator like Kotlin
+ - Null safety with `?` type operator like Kotlin and Ceylon
 
 ## Syntax
 The syntax is a combination of Clojure (Lisp) and ML, designed to look C-style, like Kotlin/Java/JavaScript.
@@ -53,29 +60,30 @@ Multi-line CymDoc comment in .md format
 ```
 
 ### Functions vs. Record literals
-**Lisp** puts the the function name to the right of the parenthesis, which causes plain lists to require quoting:
+**Lisp** puts the function name to the right of the parenthesis, which causes plain lists to require quoting:
 ```
-(func arg1 arg2)    // call/apply funct with arguments arg1 and arg2.
-'(“Marge” 37 16.24) // a literal list of 3 items.
+(func arg1 arg2)    ;; call/apply func with arguments arg1 and arg2.
+'(“Marge” 37 16.24) ;; a literal list of 3 items.
 ```
 
 **Cymling** puts the function to the left and literal Records (not lists) will NOT require quoting:
 ```
 func(arg1 arg2)    // function application
-(“Marge” 37 16.24) // record/tuple of 3 items with types String, Int and Float
-Person(“Marge” 37 16.24) // Person class instantiated 3 items with types String, Int and Float
+(name=“Marge” age=37 height=16.24) // anonymous record of 3 items with members name:String, age:Int and height:Float
+Person(“Marge” 37 16.24) // Person record instantiated with 3 items of the appropriate types.
 ```
 
 ## Operators
-Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.  So there will be very few infix operators in this language, mostly for the type system.
+Infix operators allow very Natural-Language friendly syntax, but can quickly lead to confusion with precedence and overriding.
+There will be very few infix operators in this language, mostly for the type system.
 
 Operators (in precedence order):
  - `.` for function application
  - `=` associates keys with values in records/maps.
 
 Type operators (in precedence order):
- - `<T>` Specifies a generic type, like Java, Scala, and Kotlin
- - `:` Introduces a type, like Scala and Kotlin.
+ - `<T>` Specifies a generic type, like Kotlin/Scala/Java
+ - `:` Introduces a type, like Kotlin/Scala.
  - `|` ("or") for union types, `&` ("and") for intersection types
 
 ### Dot Operator
@@ -90,13 +98,21 @@ first(arg1).second(arg2)
 ```
 
 ## Records
-Like ML, we'll use records.  This language is type safe, but it does not require you to define types beforehand.  Just make records and use them.  You'll probably want to define aliases for commonly used records, especially if you pass them to functions.  For that, there's a built-in `type` keyword.  A data definition looks like this:
+Records are the basis of Cymling.
+This language is type safe, but does not require you to define types beforehand.
+Just make tuples or records and use them.
+The difference between a record and a tuple is that members of a record are accessed by name while members of a tuple are accessed by position.
+Cymling may support an anonymous tuple as well as a record, but maybe not immediately.
+You'll probably want to define aliases for commonly used records, especially if you pass them to functions.
+For that, there's a built-in `type` keyword.
+A data definition looks like this:
 ```
-type Person(name: String?
-            age: Int = 0
+type Person(name:String?
+            age:Int = 0
             height:Float?)
 ```
-Notice that this is C-like syntax.  That's because this is about types and therefore deserves to *look* different from the more lispy grammar of the rest of the language.
+Notice that this is C-like syntax.
+That's because this is about types and therefore deserves to *look* different from the more lispy grammar of the rest of the language.
 
 An instance of that definition is declared using Record syntax.  Parameters can be accessed by index (0-based), or optional names may be used for clarity.
 ```
@@ -106,45 +122,51 @@ Person(name=“Fred” age=23 height=17.89)
 Person(“Little Margo” height=3.14) // gets the default age=0.
 ```
 
-Both of the above examples compile to something like Plain Old Java Objects (POJO's) of type Person (possibly a sub-class of [Tuple3](https://github.com/GlenKPeterson/Paguro/blob/master/src/main/java/org/organicdesign/fp/tuple/Tuple3.java) with getter methods and a static factory constructor, but no setter methods:
+Both of the above examples compile to something like Plain Old Java Objects (POJO's) of type Person with getter methods and a static factory constructor, but no setter methods:
 ```java
 public class Person implements IndentedStringable {
-    private final String name;
-    private final Long age;
-    private final Double height;
-    private Person(String p1, Long p2, Double p3) {
+    private final @NotNull String name;
+    private final @NotNull Long age;
+    private final @NotNull Double height;
+    private Person(@NotNull String p1, @NotNull Long p2, @NotNull Double p3) {
         name = p1;
         age = p2;
         height = p3;
     }
-    public String getName() { return name; }
+    public @NotNull String getName() { return name; }
     public long getAge() { return age; }
     public double getHeight() { return height; }
-    
+
     @Override
     public String indentedStr(int indent) {
         return "Person(" + stringify(name) +
                " " + stringify(age) +
                " " + stringify(height) + ")";
     }
-    
+
     @Override
     public String toString() { return indentedStr(0); }
-    
+
     @Override
     public int hashCode() { return EQUATOR.hash(this); }
-    
+
     @Override
     public boolean equals(Object other) { return EQUATOR.eq(this, other); }
-    
-    public static Person of(String name, Long age, Double height) {
+
+    public static Person of(@NotNull String name, @NotNull Long age, @NotNull Double height) {
         return new Person(name, age, height);
     }
-    
-    public static Equator<Person> getDefaultEquator() { ... // Defines equality
+
+    public static Equator<Person> getDefaultEquator();  // Defines equality
 }
 ```
-Note the private constructor and public factory method.  This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.  This is *different* from Kotlin.  It may implement a Tuple3-like interface, but does not *extend* anything.  Maybe there will be a @JvmExtends annotation to let you extend Java classes.  There may be static Equator and Comparator objects on this too.  It may include JetBrains @Nullable and @NotNull annotations (in the generated code).
+Note the private constructor and public factory method.
+This follows Joshua Bloch's advice and makes it easy to control instance creation later for making a flyweight or limited instance class.
+This is *different* from Kotlin.
+It may implement a Tuple3-like interface, but does not *extend* anything.
+Maybe there will be a @JvmExtends annotation to let you extend Java classes for compatibility with existing libraries.
+There may be static Equator and Comparator objects on this too.
+It may include JetBrains @Nullable and @NotNull annotations (in the generated code).
 
 ```
 // Record definition with some defaults and inferred types (name: String and Height: Float32)
@@ -283,7 +305,7 @@ Parameterized types use angle-brackets like Java.
 ```
 type List<T> =             ; Define a type called “List” with type param T
         ( get:Fn1<Long,T>
-          cons:Fn<U,List<T|U>> )                  
+          cons:Fn<U,List<T|U>> )
 ```
 
 Main Method
@@ -399,7 +421,7 @@ type PlayItem = Chip|CardWithBack
 Now when you use a PlayItem, you have to destructure it:
 TODO: Destructuring syntax needs work!  Should be similar to cond() expression.
 ```
-toString(item:PlayItem) = 
+toString(item:PlayItem) =
     item.match({ chip         -> cat(“Chip: “ chip.color()) }
                { cardWithBack -> cat(“Card: “ card.printCard())})
 ```
@@ -420,6 +442,7 @@ toString(item:PlayItem) =
 & 'and' for intersection type
 ? for 'or nil' types
 # (de)reference
+% keyword???
 ```
 
 ## Keywords
