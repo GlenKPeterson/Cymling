@@ -35,6 +35,7 @@ Cymling is a rarely used word for a pattypan squash.  It's also one of the few s
      Those will be in the standard library (based on Paguro which was forked from Clojure).
  - Angle brackets are used for parameterized types: `List<String>`
  - Null safety with `?` type operator like Kotlin and Ceylon
+ - The language should manage singleton instances of common functions like the identity function (just returns its argument) so that other functions can be compared to it for equality.
 
 ## Syntax
 The syntax is a combination of Clojure (Lisp) and ML, designed to look C-style, like Kotlin/Java/JavaScript.
